@@ -31,7 +31,5 @@ export const Media: CollectionConfig = {
       },
     },
   ],
-  upload: {
-    staticDir: '/app/media',
-  },
+  upload: true,
 }

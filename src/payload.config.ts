@@ -17,6 +17,8 @@ import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { SendDueLetters } from './tasks/send-due-letters'
 import { migrations } from './migrations'
+import Image from 'next/image'
+import AdminIcon from './components/icon'
 
 function requiredEnv(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing env var: ${name}`)
@@ -43,12 +45,18 @@ export default buildConfig({
   admin: {
     meta: {
       titleSuffix: '- FONBEC Cartas',
+      icons: {
+        icon: '/favicon.ico',
+      },
     },
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
     },
     dateFormat: "d 'de' MMMM yyyy",
+    components: {
+      graphics: { Icon: '@/components/icon', Logo: '@/components/logo' },
+    },
   },
   collections: [
     Users,
