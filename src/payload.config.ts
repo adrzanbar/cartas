@@ -16,6 +16,7 @@ import { EmailTemplates } from './collections/EmailTemplates'
 import SMTPTransport from 'nodemailer/lib/smtp-transport'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { SendDueLetters } from './tasks/send-due-letters'
+import { migrations } from './migrations'
 
 function requiredEnv(name: string, value: string | undefined): string {
   if (!value) throw new Error(`Missing env var: ${name}`)
@@ -68,6 +69,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL,
     },
+    prodMigrations: migrations,
   }),
   sharp,
   email: nodemailerAdapter({
