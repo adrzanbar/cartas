@@ -138,7 +138,6 @@
   .list-header,
   .doc-header {
     background-color: var(--theme-elevation-0);
-    border-bottom: 1px solid var(--theme-elevation-100);
   }
 
   /* ── Dashboard cards ── */
@@ -172,7 +171,6 @@
     background-color: var(--theme-elevation-50);
     color: #1b6b58;
     font-weight: 600;
-    border-bottom: 2px solid #3a8f72;
   }
 
   .table tbody tr:nth-child(even) td {
@@ -322,13 +320,11 @@
   .modal__header,
   .drawer__header {
     background-color: var(--theme-elevation-50);
-    border-bottom: 2px solid #3a8f72;
   }
 
   /* ── Toolbar / list controls ── */
   .list-controls {
     background-color: var(--theme-elevation-50);
-    border-bottom: 1px solid var(--theme-elevation-100);
   }
 
   /* ── Pagination ── */
@@ -469,7 +465,6 @@
   .list-header,
   .doc-header {
     background-color: var(--theme-elevation-50);
-    border-bottom: 1px solid var(--theme-elevation-150);
   }
 
   /* ── Dashboard cards ── */
@@ -503,7 +498,6 @@
     background-color: var(--theme-elevation-150);
     color: #b8d42d;
     font-weight: 600;
-    border-bottom: 2px solid #3a8f72;
   }
 
   .table tbody tr:nth-child(even) td {
@@ -653,13 +647,11 @@
   .modal__header,
   .drawer__header {
     background-color: var(--theme-elevation-150);
-    border-bottom: 2px solid #3a8f72;
   }
 
   /* ── Toolbar / list controls ── */
   .list-controls {
     background-color: var(--theme-elevation-50);
-    border-bottom: 1px solid var(--theme-elevation-150);
   }
 
   /* ── Pagination ── */
