@@ -54,6 +54,6 @@ export const LetterImages: CollectionConfig = {
   ],
   upload: {
     mimeTypes: ['image/*'],
-    staticDir: '/app/media',
+    staticDir: '/app/letter-images',
   },
 }
