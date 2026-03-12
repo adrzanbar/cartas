@@ -56,7 +56,7 @@ export const ScholarshipHolder: CollectionConfig = {
     {
       name: 'sponsors',
       type: 'relationship',
-      label: { es: 'Patrocinadores' },
+      label: { es: 'Padrinos' },
       relationTo: 'sponsors',
       hasMany: true,
     },
