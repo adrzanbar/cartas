@@ -27,6 +27,7 @@
     "@types/nodemailer": "^7.0.11",
     "cross-env": "^7.0.3",
     "dotenv": "16.4.7",
+    "googleapis": "^171.4.0",
     "graphql": "^16.8.1",
     "handlebars": "^4.7.8",
     "next": "15.4.11",

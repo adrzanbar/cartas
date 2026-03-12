@@ -13,33 +13,9 @@ import { Sponsors } from './collections/Sponsors'
 import { Users } from './collections/Users'
 import { es } from '@payloadcms/translations/languages/es'
 import { EmailTemplates } from './collections/EmailTemplates'
-import SMTPTransport from 'nodemailer/lib/smtp-transport'
-import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { SendDueLetters } from './tasks/send-due-letters'
 import { migrations } from './migrations'
-import Image from 'next/image'
-import AdminIcon from './components/icon'
-
-function requiredEnv(name: string, value: string | undefined): string {
-  if (!value) throw new Error(`Missing env var: ${name}`)
-  return value
-}
-
-const clientId = requiredEnv('GMAIL_CLIENT_ID', process.env.GMAIL_CLIENT_ID)
-const clientSecret = requiredEnv('GMAIL_CLIENT_SECRET', process.env.GMAIL_CLIENT_SECRET)
-const refreshToken = requiredEnv('GMAIL_REFRESH_TOKEN', process.env.GMAIL_REFRESH_TOKEN)
-const userEmail = requiredEnv('GMAIL_USER_EMAIL', process.env.GMAIL_USER_EMAIL)
-
-const transportOptions: SMTPTransport.Options = {
-  service: 'gmail',
-  auth: {
-    type: 'OAuth2' as const,
-    user: userEmail,
-    clientId,
-    clientSecret,
-    refreshToken,
-  },
-}
+import { httpOAuthAdapter } from './adapters/email-http-oauth'
 
 export default buildConfig({
   admin: {
@@ -80,10 +56,12 @@ export default buildConfig({
     prodMigrations: migrations,
   }),
   sharp,
-  email: nodemailerAdapter({
-    defaultFromAddress: userEmail,
-    defaultFromName: 'Cartas',
-    transportOptions,
+  email: httpOAuthAdapter({
+    defaultFromAddress: process.env.EMAIL_USER || '',
+    defaultFromName: process.env.EMAIL_USER || '',
+    clientId: process.env.EMAIL_CLIENT_ID || '',
+    clientSecret: process.env.EMAIL_CLIENT_SECRET || '',
+    refreshToken: process.env.EMAIL_CLIENT_REFRESH_TOKEN || '',
   }),
   plugins: [],
   i18n: {
