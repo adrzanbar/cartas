@@ -53,6 +53,6 @@ export const LetterImages: CollectionConfig = {
     },
   ],
   upload: {
-    mimeTypes: ['image/*'],
+    mimeTypes: ['image/*', 'application/pdf'],
   },
 }
