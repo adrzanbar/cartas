@@ -1,6 +1,11 @@
 import { CollectionConfig } from 'payload'
 import { isAdmin } from './Users'
 
+const whereActive = () => ({
+  active: { equals: true },
+  sendAt: { less_than_equal: new Date().toISOString() },
+})
+
 export const Campaigns: CollectionConfig = {
   slug: 'campaigns',
   labels: {
@@ -11,6 +16,10 @@ export const Campaigns: CollectionConfig = {
     create: ({ req: { user } }) => isAdmin(user),
     update: ({ req: { user } }) => isAdmin(user),
     delete: ({ req: { user } }) => isAdmin(user),
+    read: ({ req: { user } }) => {
+      if (isAdmin(user)) return true
+      return whereActive()
+    },
   },
   admin: {
     useAsTitle: 'subject',
