@@ -12,6 +12,8 @@ const nextConfig = {
 
     return webpackConfig
   },
+  serverExternalPackages: ['handlebars'],
+  output: 'standalone',
 }
 
 export default withPayload(nextConfig, { devBundleServerPackages: false })
