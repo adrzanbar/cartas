@@ -31,7 +31,15 @@ export const Users: CollectionConfig = {
       es: 'Administración',
     },
   },
-  auth: true,
+  auth: {
+    forgotPassword: {
+      generateEmailHTML: (args) => {
+        return `
+        Estás recibiendo este correo porque tú (o alguien más) ha solicitado restablecer la contraseña de tu cuenta. Por favor haz clic en el siguiente enlace o pégalo en tu navegador para completar el proceso: ${process.env.NEXT_PUBLIC_SERVER_URL}/admin/reset/${args?.token} Si no solicitaste esto, por favor ignora este correo y tu contraseña permanecerá sin cambios.
+        `
+      },
+    },
+  },
   fields: [
     {
       name: 'nationalId',
