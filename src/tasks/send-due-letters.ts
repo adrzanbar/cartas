@@ -91,7 +91,7 @@ export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
   slug: 'SendDueLetters',
   schedule: [
     {
-      cron: process.env.SEND_DUE_LETTERS_CRON || '0 8 * * *',
+      cron: '* * * * *',
       queue: 'letters',
     },
   ],
