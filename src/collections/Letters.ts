@@ -155,8 +155,7 @@ export const Letters: CollectionConfig = {
       hasMany: true,
       filterOptions: bySelectedAuthor,
       access: {
-        update: ({ req: { user }, data }) =>
-          data?.status !== 'sent' && (isAdmin(user) || isEditor(user)),
+        update: ({ req: { user }, data }) => isAdmin(user) || isEditor(user),
       },
     },
     {
@@ -165,44 +164,9 @@ export const Letters: CollectionConfig = {
       label: { es: 'Nota' },
       access: {
         create: ({ req: { user } }) => isAdmin(user) || isReviewer(user),
-        update: ({ req: { user } }) => isAdmin(user) || isReviewer(user),
+        update: ({ req: { user }, data }) =>
+          data?.status !== 'sent' && (isAdmin(user) || isReviewer(user)),
       },
-    },
-    {
-      name: 'deliveries',
-      type: 'array',
-      label: { es: 'Envíos' },
-      access: {
-        create: () => false,
-        update: () => false,
-      },
-      admin: { readOnly: true },
-      fields: [
-        {
-          name: 'recipient',
-          type: 'relationship',
-          relationTo: 'sponsors',
-          required: true,
-        },
-        {
-          name: 'sentAt',
-          type: 'date',
-          required: true,
-        },
-        {
-          name: 'status',
-          type: 'select',
-          options: [
-            { label: 'Enviado', value: 'sent' },
-            { label: 'Fallido', value: 'failed' },
-          ],
-          required: true,
-        },
-        {
-          name: 'error',
-          type: 'text',
-        },
-      ],
     },
   ],
   hooks: {

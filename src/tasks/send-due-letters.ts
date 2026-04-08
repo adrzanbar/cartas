@@ -1,11 +1,97 @@
 import Handlebars from 'handlebars'
-import type { TaskConfig } from 'payload'
+import type { BasePayload, TaskConfig } from 'payload'
+import path from 'path'
+import fs from 'fs/promises'
+import { Letter, LetterImage, Sponsor } from '@/payload-types'
+import { Attachment } from 'nodemailer/lib/mailer'
+
+class LetterSender {
+  templates: Map<number, HandlebarsTemplateDelegate<any>> = new Map()
+  payload: BasePayload
+
+  constructor(payload: BasePayload) {
+    this.payload = payload
+  }
+
+  getImageBuffer = async (letterImage: LetterImage) => {
+    if (!letterImage?.filename) return undefined
+    const filePath = path.join(process.cwd(), 'letter-images', letterImage.filename)
+    return await fs.readFile(filePath)
+  }
+
+  sendLetter = async (letter: Letter, recipient: Sponsor) => {
+    if (!recipient.email) throw new Error('Invalid recipient email')
+    if (typeof letter.campaign === 'number') throw new Error('Invalid campaign')
+    if (typeof letter.campaign['email-template'] === 'number')
+      throw new Error('Invalid email template')
+    if (typeof letter.author === 'number') throw new Error('Invalid author')
+    if (!letter.images) throw new Error('No letter images to send')
+
+    const instagram = letter.campaign['email-template'].images?.filter(
+      (image) => image.name === 'instagram',
+    )[0].image
+    const letterIcon = letter.campaign['email-template'].images?.filter(
+      (image) => image.name === 'letter',
+    )[0].image
+
+    if (typeof instagram === 'number' || typeof letterIcon === 'number') {
+      throw new Error('Invalid template images')
+    }
+
+    let template = this.templates.get(letter.campaign['email-template'].id)
+    if (!template) {
+      template = Handlebars.compile(letter.campaign['email-template'].template)
+      this.templates.set(letter.campaign['email-template'].id, template)
+    }
+
+    const images: Attachment[] = []
+    const files: Attachment[] = []
+
+    for (const { image } of letter.images) {
+      if (typeof image === 'number') throw new Error('Invalid letter image')
+
+      const isImage = image.mimeType?.startsWith('image/')
+      const isPdf = image.mimeType === 'application/pdf'
+
+      if (isImage) {
+        images.push({
+          filename: image.filename || undefined,
+          content: await this.getImageBuffer(image),
+          cid: `letter-image-${letter.id}-${image.id}`,
+        })
+      } else if (isPdf) {
+        files.push({
+          filename: image.filename || undefined,
+          content: await this.getImageBuffer(image),
+        })
+      } else {
+        throw new Error(`Unsupported mime type: ${image.mimeType}`)
+      }
+    }
+
+    const html = template({
+      becario: letter.author.name,
+      padrino: recipient.name,
+      message: letter.campaign.message,
+      instagram: instagram?.url,
+      letter: letterIcon?.url,
+      letterImages: images.map((image) => image.cid),
+    })
+
+    await this.payload.sendEmail({
+      to: recipient.email,
+      subject: letter.campaign.subject,
+      html,
+      attachments: [...images, ...files],
+    })
+  }
+}
 
 export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
   slug: 'SendDueLetters',
   schedule: [
     {
-      cron: '* * * * *',
+      cron: '0 8 * * *',
       queue: 'letters',
     },
   ],
@@ -15,35 +101,19 @@ export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
   ],
   handler: async ({ req }) => {
     console.log('[SendDueLetters] task started')
-
     const { payload } = req
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL
-    const now = new Date().toISOString()
+    const sender = new LetterSender(payload)
 
-    const { docs: campaigns } = await payload.find({
+    const { docs: campaigns, totalDocs } = await payload.find({
       collection: 'campaigns',
       where: {
-        and: [{ active: { equals: true } }, { sendAt: { less_than_equal: now } }],
+        and: [
+          { active: { equals: true } },
+          { sendAt: { less_than_equal: new Date().toISOString() } },
+        ],
       },
+      pagination: false,
     })
-
-    if (campaigns.length === 0) return { output: { sent: 0, failed: 0 } }
-
-    const [instagramResult, letterResult] = await Promise.all([
-      payload.find({
-        collection: 'media',
-        where: { filename: { equals: 'instagram.png' } },
-        limit: 1,
-      }),
-      payload.find({
-        collection: 'media',
-        where: { filename: { equals: 'letter.png' } },
-        limit: 1,
-      }),
-    ])
-
-    const instagramIconUrl = `${serverUrl}${(instagramResult.docs[0] as any)?.url}`
-    const letterIconUrl = `${serverUrl}${(letterResult.docs[0] as any)?.url}`
 
     let totalSent = 0
     let totalFailed = 0
@@ -57,90 +127,76 @@ export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
         depth: 3,
       })
 
-      let allLettersFullySent = true
+      let allSent = true
 
       for (const letter of letters) {
-        const { author, recipients, images, deliveries } = letter as any
+        const { recipients } = letter
 
-        const attachments =
-          images?.map((i: any) => ({
-            filename: i.image.filename,
-            path: `${process.cwd()}/letter-images/${i.image.filename}`,
-            cid: i.image.filename,
-          })) ?? []
+        if (!recipients) continue
 
-        const emailTemplate = (campaign as any)['email-template']
-        const template = Handlebars.compile(emailTemplate.template)
-
-        const alreadySent = new Set(
-          (deliveries ?? [])
-            .filter((d: any) => d.status === 'sent')
-            .map((d: any) => (typeof d.recipient === 'number' ? d.recipient : d.recipient.id)),
-        )
-
-        const pendingRecipients = (recipients ?? []).filter(
-          (r: any) => !!r.email && !alreadySent.has(r.id),
-        )
-
-        const newDeliveries: any[] = []
-
-        for (const recipient of pendingRecipients) {
-          const html = template({
-            becario: (author as any).name,
-            padrino: recipient.name,
-            message: (campaign as any).message,
-            images: images?.length > 0,
-            image: images?.map((i: any) => i.image.filename),
-            instagram: instagramIconUrl,
-            letter: letterIconUrl,
-          })
-
+        for (const recipient of recipients) {
+          if (typeof recipient === 'number') {
+            console.warn(`[SendDueLetters] failed to get recipient data for ${recipient}, skipping`)
+            continue
+          }
           try {
-            await payload.sendEmail({
-              to: recipient.email,
-              subject: campaign.subject,
-              html,
-              attachments,
+            const { docs } = await payload.find({
+              collection: 'deliveries',
+              where: {
+                and: [{ letter: { equals: letter.id } }, { recipient: { equals: recipient.id } }],
+              },
+              limit: 1,
             })
-            newDeliveries.push({
-              recipient: recipient.id,
-              sentAt: new Date().toISOString(),
-              status: 'sent',
+            if (docs[0]) continue
+
+            await sender.sendLetter(letter, recipient)
+
+            await payload.create({
+              collection: 'deliveries',
+              data: {
+                letter: letter.id,
+                recipient: recipient.id,
+              },
             })
+
             totalSent++
           } catch (err: any) {
-            newDeliveries.push({
-              recipient: recipient.id,
-              sentAt: new Date().toISOString(),
-              status: 'failed',
-              error: err.message,
-            })
+            console.warn(`[SendDueLetters]`, err)
             totalFailed++
           }
         }
 
-        const allDeliveries = [...(deliveries ?? []), ...newDeliveries]
-        const allRecipients = (recipients ?? []).filter((r: any) => !!r.email)
-        const letterFullySent = allRecipients.every((r: any) =>
-          allDeliveries.some((d: any) => {
-            const dId = typeof d.recipient === 'number' ? d.recipient : d.recipient?.id
-            return dId === r.id && d.status === 'sent'
-          }),
-        )
-
-        if (!letterFullySent) allLettersFullySent = false
-
-        await payload.update({
-          collection: 'letters',
-          id: letter.id,
-          data: {
-            status: letterFullySent ? 'sent' : 'approved',
-            deliveries: allDeliveries,
+        const { docs } = await payload.find({
+          collection: 'deliveries',
+          where: {
+            and: [
+              { letter: { equals: letter.id } },
+              {
+                recipient: {
+                  in: letter.recipients?.map((recipient) =>
+                    typeof recipient === 'number' ? recipient : recipient.id,
+                  ),
+                },
+              },
+            ],
           },
         })
+        const sent = docs.length === letter.recipients?.length
+
+        if (sent) {
+          await payload.update({
+            collection: 'letters',
+            id: letter.id,
+            data: {
+              status: 'sent',
+            },
+          })
+        }
+
+        allSent &&= sent
       }
 
-      if (allLettersFullySent && letters.length > 0) {
+      if (allSent) {
         await payload.update({
           collection: 'campaigns',
           id: campaign.id,
@@ -149,6 +205,7 @@ export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
       }
     }
 
+    console.log(`[SendDueLetters] done — sent: ${totalSent}, failed: ${totalFailed}`)
     return { output: { sent: totalSent, failed: totalFailed } }
   },
 }

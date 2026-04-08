@@ -36,5 +36,25 @@ export const EmailTemplates: CollectionConfig = {
         language: 'handlebars',
       },
     },
+    {
+      name: 'images',
+      type: 'array',
+      label: { es: 'Imágenes' },
+      minRows: 1,
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+        },
+        {
+          name: 'image',
+          type: 'upload',
+          label: { es: 'Imagen' },
+          relationTo: 'media',
+          required: true,
+        },
+      ],
+    },
   ],
 }

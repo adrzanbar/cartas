@@ -16,6 +16,7 @@ import { EmailTemplates } from './collections/EmailTemplates'
 import { SendDueLetters } from './tasks/send-due-letters'
 import { migrations } from './migrations'
 import { httpOAuthAdapter } from './adapters/email-http-oauth'
+import { Deliveries } from './collections/Deliveries'
 
 export default buildConfig({
   admin: {
@@ -43,6 +44,7 @@ export default buildConfig({
     EmailTemplates,
     Letters,
     LetterImages,
+    Deliveries,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

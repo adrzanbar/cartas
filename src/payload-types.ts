@@ -75,6 +75,7 @@ export interface Config {
     'email-templates': EmailTemplate;
     letters: Letter;
     'letter-images': LetterImage;
+    deliveries: Delivery;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -91,6 +92,7 @@ export interface Config {
     'email-templates': EmailTemplatesSelect<false> | EmailTemplatesSelect<true>;
     letters: LettersSelect<false> | LettersSelect<true>;
     'letter-images': LetterImagesSelect<false> | LetterImagesSelect<true>;
+    deliveries: DeliveriesSelect<false> | DeliveriesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -237,6 +239,13 @@ export interface EmailTemplate {
   id: number;
   name: string;
   template: string;
+  images?:
+    | {
+        name: string;
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -257,15 +266,6 @@ export interface Letter {
     | null;
   recipients?: (number | Sponsor)[] | null;
   note?: string | null;
-  deliveries?:
-    | {
-        recipient: number | Sponsor;
-        sentAt: string;
-        status: 'sent' | 'failed';
-        error?: string | null;
-        id?: string | null;
-      }[]
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -288,6 +288,17 @@ export interface LetterImage {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "deliveries".
+ */
+export interface Delivery {
+  id: number;
+  letter: number | Letter;
+  recipient: number | Sponsor;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -449,6 +460,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'letter-images';
         value: number | LetterImage;
+      } | null)
+    | ({
+        relationTo: 'deliveries';
+        value: number | Delivery;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -580,6 +595,13 @@ export interface CampaignsSelect<T extends boolean = true> {
 export interface EmailTemplatesSelect<T extends boolean = true> {
   name?: T;
   template?: T;
+  images?:
+    | T
+    | {
+        name?: T;
+        image?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -599,15 +621,6 @@ export interface LettersSelect<T extends boolean = true> {
       };
   recipients?: T;
   note?: T;
-  deliveries?:
-    | T
-    | {
-        recipient?: T;
-        sentAt?: T;
-        status?: T;
-        error?: T;
-        id?: T;
-      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -629,6 +642,16 @@ export interface LetterImagesSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "deliveries_select".
+ */
+export interface DeliveriesSelect<T extends boolean = true> {
+  letter?: T;
+  recipient?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
