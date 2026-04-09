@@ -16,10 +16,6 @@ export const Campaigns: CollectionConfig = {
     create: ({ req: { user } }) => isAdmin(user),
     update: ({ req: { user } }) => isAdmin(user),
     delete: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => {
-      if (isAdmin(user)) return true
-      return whereActive()
-    },
   },
   admin: {
     useAsTitle: 'subject',

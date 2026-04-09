@@ -1,5 +1,5 @@
 import type { CollectionConfig, Where } from 'payload'
-import { getManagedAuthorIds, isAdmin, isEditor } from './Users'
+import { getManagedAuthorIds, isAdmin, isEditor, isReviewer } from './Users'
 import { User } from '@/payload-types'
 
 const whereManager = (user: User | null): Where => {
@@ -21,10 +21,6 @@ export const ScholarshipHolder: CollectionConfig = {
   },
   access: {
     create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => {
-      if (isEditor(user)) return whereManager(user)
-      return true
-    },
     update: ({ req: { user } }) => isAdmin(user),
     delete: ({ req: { user } }) => isAdmin(user),
   },

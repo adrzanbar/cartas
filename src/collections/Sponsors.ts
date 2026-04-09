@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from './Users'
+import { isAdmin, isEditor, isReviewer } from './Users'
 
 export const Sponsors: CollectionConfig = {
   slug: 'sponsors',
