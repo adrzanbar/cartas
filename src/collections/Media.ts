@@ -10,7 +10,6 @@ export const Media: CollectionConfig = {
     plural: { es: 'Medios' },
   },
   access: {
-    admin: ({ req: { user } }) => isAdmin(user),
     create: ({ req: { user } }) => isAdmin(user),
     read: () => true,
     update: ({ req: { user } }) => isAdmin(user),
@@ -20,6 +19,7 @@ export const Media: CollectionConfig = {
     group: {
       es: 'Administración',
     },
+    hidden: ({ user }) => !isAdmin(user),
   },
   fields: [
     {
