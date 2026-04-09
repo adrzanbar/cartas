@@ -76,7 +76,7 @@ export const Letters: CollectionConfig = {
     read: ({ req: { user } }) => {
       if (isAdmin(user)) return true
       if (isReviewer(user)) return whereCampaignActive()
-      if (isEditor(user)) return { and: [whereAuthorManager(user), whereCampaignActive()] }
+      if (isEditor(user)) return { and: [whereAuthorManager(user)] }
       return false
     },
     update: ({ req: { user } }) => {
