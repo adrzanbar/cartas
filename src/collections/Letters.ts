@@ -20,7 +20,11 @@ export const whereCampaignActive = (): Where => ({
 })
 
 export const whereNotApproved = (): Where => ({
-  approved: { equals: false },
+  status: { not_equals: 'approved' },
+})
+
+export const whereNotSent = (): Where => ({
+  status: { not_equals: 'sent' },
 })
 
 export const bySelectedAuthor = async ({ data, req }: FilterOptionsProps) => {
@@ -76,19 +80,34 @@ export const Letters: CollectionConfig = {
     read: ({ req: { user } }) => {
       if (isAdmin(user)) return true
       if (isReviewer(user)) return whereCampaignActive()
-      if (isEditor(user)) return { and: [whereAuthorManager(user)] }
+      if (isEditor(user)) return whereAuthorManager(user)
       return false
     },
     update: ({ req: { user } }) => {
-      if (isAdmin(user) || isReviewer(user)) return true
+      if (isAdmin(user)) return true
+      if (isReviewer(user)) return { and: [whereCampaignActive(), whereNotSent()] }
       if (isEditor(user))
-        return { and: [whereAuthorManager(user), whereCampaignActive(), whereNotApproved()] }
+        return {
+          and: [
+            whereAuthorManager(user),
+            whereCampaignActive(),
+            whereNotApproved(),
+            whereNotSent(),
+          ],
+        }
       return false
     },
     delete: ({ req: { user } }) => {
       if (isAdmin(user)) return true
       if (isEditor(user))
-        return { and: [whereAuthorManager(user), whereCampaignActive(), whereNotApproved()] }
+        return {
+          and: [
+            whereAuthorManager(user),
+            whereCampaignActive(),
+            whereNotApproved(),
+            whereNotSent(),
+          ],
+        }
       return false
     },
   },

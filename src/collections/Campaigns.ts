@@ -1,5 +1,5 @@
 import { CollectionConfig } from 'payload'
-import { isAdmin } from './Users'
+import { isAdmin, isEditor, isReviewer } from './Users'
 
 const whereActive = () => ({
   active: { equals: true },
@@ -14,6 +14,11 @@ export const Campaigns: CollectionConfig = {
   },
   access: {
     create: ({ req: { user } }) => isAdmin(user),
+    read: ({ req: { user } }) => {
+      if (isAdmin(user) || isReviewer(user)) return true
+      if (isEditor(user)) return whereActive()
+      return false
+    },
     update: ({ req: { user } }) => isAdmin(user),
     delete: ({ req: { user } }) => isAdmin(user),
   },

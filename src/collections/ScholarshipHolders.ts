@@ -21,6 +21,11 @@ export const ScholarshipHolder: CollectionConfig = {
   },
   access: {
     create: ({ req: { user } }) => isAdmin(user),
+    read: ({ req: { user } }) => {
+      if (isAdmin(user) || isReviewer(user)) return true
+      if (isEditor(user)) return whereManager(user)
+      return false
+    },
     update: ({ req: { user } }) => isAdmin(user),
     delete: ({ req: { user } }) => isAdmin(user),
   },
