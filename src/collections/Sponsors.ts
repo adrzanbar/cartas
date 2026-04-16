@@ -3,22 +3,6 @@ import { isAdmin, isEditor, isReviewer } from './Users'
 
 export const Sponsors: CollectionConfig = {
   slug: 'sponsors',
-  labels: {
-    singular: { es: 'Padrino' },
-    plural: { es: 'Padrinos' },
-  },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
-  },
-  admin: {
-    useAsTitle: 'name',
-    hidden: ({ user }) => !isAdmin(user),
-    group: {
-      es: 'Personas',
-    },
-  },
   fields: [
     {
       name: 'nationalId',
@@ -45,4 +29,20 @@ export const Sponsors: CollectionConfig = {
       label: { es: 'Correo electrónico' },
     },
   ],
+  access: {
+    create: ({ req: { user } }) => isAdmin(user),
+    update: ({ req: { user } }) => isAdmin(user),
+    delete: ({ req: { user } }) => isAdmin(user),
+  },
+  admin: {
+    useAsTitle: 'name',
+    hidden: ({ user }) => !isAdmin(user),
+    group: {
+      es: 'Personas',
+    },
+  },
+  labels: {
+    singular: { es: 'Padrino' },
+    plural: { es: 'Padrinos' },
+  },
 }

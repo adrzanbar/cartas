@@ -1,34 +1,14 @@
-import { CollectionConfig } from 'payload'
-import { isAdmin, isEditor, isReviewer } from './Users'
+import { CollectionConfig, Where } from 'payload'
+import { isAdmin } from './Users'
 
-const whereActive = () => ({
-  active: { equals: true },
-  sendAt: { less_than_equal: new Date().toISOString() },
-})
+export const whereActiveAndsendAtAfter = (active: boolean, sendAt: Date): Where => {
+  return {
+    and: [{ active: { equals: active } }, { sendAt: { greater_than: sendAt.toISOString() } }],
+  }
+}
 
 export const Campaigns: CollectionConfig = {
   slug: 'campaigns',
-  labels: {
-    singular: { es: 'Campaña' },
-    plural: { es: 'Campañas' },
-  },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => {
-      if (isAdmin(user) || isReviewer(user)) return true
-      if (isEditor(user)) return whereActive()
-      return false
-    },
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
-  },
-  admin: {
-    useAsTitle: 'subject',
-    group: {
-      es: 'Administración',
-    },
-    hidden: ({ user }) => !isAdmin(user),
-  },
   fields: [
     {
       name: 'subject',
@@ -60,4 +40,20 @@ export const Campaigns: CollectionConfig = {
       label: { es: 'Mensaje' },
     },
   ],
+  admin: {
+    useAsTitle: 'subject',
+    group: {
+      es: 'Administración',
+    },
+    hidden: ({ user }) => !isAdmin(user),
+  },
+  access: {
+    create: ({ req: { user } }) => isAdmin(user),
+    update: ({ req: { user } }) => isAdmin(user),
+    delete: ({ req: { user } }) => isAdmin(user),
+  },
+  labels: {
+    singular: { es: 'Campaña' },
+    plural: { es: 'Campañas' },
+  },
 }

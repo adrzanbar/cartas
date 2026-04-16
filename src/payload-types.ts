@@ -76,6 +76,8 @@ export interface Config {
     letters: Letter;
     'letter-images': LetterImage;
     deliveries: Delivery;
+    scholarships: Scholarship;
+    'scholarship-holder-mediations': ScholarshipHolderMediation;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -93,6 +95,8 @@ export interface Config {
     letters: LettersSelect<false> | LettersSelect<true>;
     'letter-images': LetterImagesSelect<false> | LetterImagesSelect<true>;
     deliveries: DeliveriesSelect<false> | DeliveriesSelect<true>;
+    scholarships: ScholarshipsSelect<false> | ScholarshipsSelect<true>;
+    'scholarship-holder-mediations': ScholarshipHolderMediationsSelect<false> | ScholarshipHolderMediationsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -152,7 +156,6 @@ export interface User {
   nationalId: string;
   name: string;
   roles: ('admin' | 'editor' | 'reviewer')[];
-  managedAuthors?: (number | ScholarshipHolder)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -174,32 +177,6 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "scholarship-holders".
- */
-export interface ScholarshipHolder {
-  id: number;
-  nationalId: string;
-  name: string;
-  educationLevel: 'primary' | 'secondary' | 'tertiary';
-  sponsors?: (number | Sponsor)[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sponsors".
- */
-export interface Sponsor {
-  id: number;
-  nationalId: string;
-  name: string;
-  organizationName?: string | null;
-  email?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
  */
 export interface Media {
@@ -216,6 +193,31 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarship-holders".
+ */
+export interface ScholarshipHolder {
+  id: number;
+  nationalId: string;
+  name: string;
+  educationLevel: 'primary' | 'secondary' | 'tertiary';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors".
+ */
+export interface Sponsor {
+  id: number;
+  nationalId: string;
+  name: string;
+  organizationName?: string | null;
+  email?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -276,7 +278,7 @@ export interface Letter {
 export interface LetterImage {
   id: number;
   alt: string;
-  author?: (number | null) | ScholarshipHolder;
+  author: number | ScholarshipHolder;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -297,6 +299,28 @@ export interface Delivery {
   id: number;
   letter: number | Letter;
   recipient: number | Sponsor;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarships".
+ */
+export interface Scholarship {
+  id: number;
+  scholarshipHolder: number | ScholarshipHolder;
+  sponsor: number | Sponsor;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarship-holder-mediations".
+ */
+export interface ScholarshipHolderMediation {
+  id: number;
+  user: number | User;
+  scholarshipHolder: number | ScholarshipHolder;
   updatedAt: string;
   createdAt: string;
 }
@@ -464,6 +488,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'deliveries';
         value: number | Delivery;
+      } | null)
+    | ({
+        relationTo: 'scholarships';
+        value: number | Scholarship;
+      } | null)
+    | ({
+        relationTo: 'scholarship-holder-mediations';
+        value: number | ScholarshipHolderMediation;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -515,7 +547,6 @@ export interface UsersSelect<T extends boolean = true> {
   nationalId?: T;
   name?: T;
   roles?: T;
-  managedAuthors?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -559,7 +590,6 @@ export interface ScholarshipHoldersSelect<T extends boolean = true> {
   nationalId?: T;
   name?: T;
   educationLevel?: T;
-  sponsors?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -650,6 +680,26 @@ export interface LetterImagesSelect<T extends boolean = true> {
 export interface DeliveriesSelect<T extends boolean = true> {
   letter?: T;
   recipient?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarships_select".
+ */
+export interface ScholarshipsSelect<T extends boolean = true> {
+  scholarshipHolder?: T;
+  sponsor?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarship-holder-mediations_select".
+ */
+export interface ScholarshipHolderMediationsSelect<T extends boolean = true> {
+  user?: T;
+  scholarshipHolder?: T;
   updatedAt?: T;
   createdAt?: T;
 }

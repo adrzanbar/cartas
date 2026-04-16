@@ -8,7 +8,7 @@ import { Campaigns } from './collections/Campaigns'
 import { LetterImages } from './collections/LetterImages'
 import { Letters } from './collections/Letters'
 import { Media } from './collections/Media'
-import { ScholarshipHolder } from './collections/ScholarshipHolders'
+import { ScholarshipHolders } from './collections/ScholarshipHolders'
 import { Sponsors } from './collections/Sponsors'
 import { Users } from './collections/Users'
 import { es } from '@payloadcms/translations/languages/es'
@@ -17,6 +17,8 @@ import { SendDueLetters } from './tasks/send-due-letters'
 import { migrations } from './migrations'
 import { httpOAuthAdapter } from './adapters/email-http-oauth'
 import { Deliveries } from './collections/Deliveries'
+import { Scholarships } from './collections/Scholarships'
+import { ScholarshipHolderMediations } from './collections/SholarshipHolderMediations'
 
 export default buildConfig({
   admin: {
@@ -38,13 +40,15 @@ export default buildConfig({
   collections: [
     Users,
     Media,
-    ScholarshipHolder,
+    ScholarshipHolders,
     Sponsors,
     Campaigns,
     EmailTemplates,
     Letters,
     LetterImages,
     Deliveries,
+    Scholarships,
+    ScholarshipHolderMediations,
   ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',

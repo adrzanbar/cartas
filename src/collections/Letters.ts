@@ -1,47 +1,15 @@
-import type {
-  CollectionAfterChangeHook,
-  CollectionConfig,
-  Where,
-  FilterOptionsProps,
-  Data,
-} from 'payload'
-import { getManagedAuthorIds, isAdmin, isEditor, isReviewer } from './Users'
-import type { Letter as LetterType, User } from '@/payload-types'
+import type { CollectionConfig, Where, CollectionAfterChangeHook, Payload } from 'payload'
+import { isAdmin, isEditor, isReviewer } from './Users'
+import { Letter, LetterImage, ScholarshipHolder, User } from '@/payload-types'
+import { whereActiveAndsendAtAfter } from './Campaigns'
 
-export const whereAuthorManager = (user: User | null): Where => ({
-  or: [{ author: { in: getManagedAuthorIds(user) } }, { author: { exists: false } }],
-})
+const statusOptions = [
+  { label: { es: 'Borrador' }, value: 'draft' },
+  { label: { es: 'Aprobado' }, value: 'approved' },
+  { label: { es: 'Enviado' }, value: 'sent' },
+]
 
-export const whereCampaignActive = (): Where => ({
-  and: [
-    { 'campaign.active': { equals: true } },
-    { 'campaign.sendAt': { greater_than: new Date().toISOString() } },
-  ],
-})
-
-export const whereNotApproved = (): Where => ({
-  status: { not_equals: 'approved' },
-})
-
-export const whereNotSent = (): Where => ({
-  status: { not_equals: 'sent' },
-})
-
-export const bySelectedAuthor = async ({ data, req }: FilterOptionsProps) => {
-  if (!data || !data.author) return { id: { in: [] } }
-
-  const { docs } = await req.payload.find({
-    collection: 'scholarship-holders',
-    where: { id: { equals: data.author } },
-  })
-
-  const sponsors = docs[0]?.sponsors ?? []
-  const sponsorIds = sponsors.map((sponsor) => (typeof sponsor === 'number' ? sponsor : sponsor.id))
-
-  return { id: { in: sponsorIds } }
-}
-
-const setLetterImageAuthor: CollectionAfterChangeHook<LetterType> = async ({ doc, req }) => {
+const setLetterImageAuthor: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
   const mediaIds = (doc.images ?? []).map((item) =>
     typeof item.image === 'number' ? item.image : item.image.id,
   )
@@ -56,66 +24,35 @@ const setLetterImageAuthor: CollectionAfterChangeHook<LetterType> = async ({ doc
   )
 }
 
-const statusOptions = [
-  { label: { es: 'Borrador' }, value: 'draft' },
-  { label: { es: 'Aprobado' }, value: 'approved' },
-  { label: { es: 'Enviado' }, value: 'sent' },
-]
+export const whereAuthorManager = async (payload: Payload, user: User): Promise<Where> => {
+  const result = await payload.find({
+    collection: 'scholarship-holder-mediations',
+    where: {
+      and: [{ 'user.id': { equals: user?.id } }],
+    },
+    pagination: false,
+    depth: 0,
+  })
 
-const statusFilterOptions = ({ data }: { data: Data }) => {
-  const status = data?.status
-  return status === 'sent'
-    ? statusOptions
-    : statusOptions.filter((option) => option.value !== 'sent')
+  return { 'author.id': { in: result.docs.map((doc) => doc.scholarshipHolder) } }
+}
+
+const whereAuthorSponsor = async (payload: Payload, data: Letter): Promise<Where> => {
+  const result = await payload.find({
+    collection: 'scholarships',
+    where: {
+      and: [{ scholarshipHolder: { equals: data.author } }],
+    },
+    pagination: false,
+    depth: 0,
+  })
+  return {
+    id: { in: result.docs.map((doc) => doc.sponsor) },
+  }
 }
 
 export const Letters: CollectionConfig = {
   slug: 'letters',
-  labels: {
-    singular: { es: 'Carta' },
-    plural: { es: 'Cartas' },
-  },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user) || isEditor(user),
-    read: ({ req: { user } }) => {
-      if (isAdmin(user)) return true
-      if (isReviewer(user)) return whereCampaignActive()
-      if (isEditor(user)) return whereAuthorManager(user)
-      return false
-    },
-    update: ({ req: { user } }) => {
-      if (isAdmin(user)) return true
-      if (isReviewer(user)) return { and: [whereCampaignActive(), whereNotSent()] }
-      if (isEditor(user))
-        return {
-          and: [
-            whereAuthorManager(user),
-            whereCampaignActive(),
-            whereNotApproved(),
-            whereNotSent(),
-          ],
-        }
-      return false
-    },
-    delete: ({ req: { user } }) => {
-      if (isAdmin(user)) return true
-      if (isEditor(user))
-        return {
-          and: [
-            whereAuthorManager(user),
-            whereCampaignActive(),
-            whereNotApproved(),
-            whereNotSent(),
-          ],
-        }
-      return false
-    },
-  },
-  admin: {
-    group: {
-      es: 'Cartas',
-    },
-  },
   fields: [
     {
       name: 'campaign',
@@ -126,6 +63,7 @@ export const Letters: CollectionConfig = {
       access: {
         update: () => false,
       },
+      filterOptions: whereActiveAndsendAtAfter(true, new Date()),
     },
     {
       name: 'author',
@@ -136,26 +74,33 @@ export const Letters: CollectionConfig = {
       access: {
         update: () => false,
       },
+      filterOptions: async ({ req: { user, payload } }) => {
+        if (!user) return false
+        if (isAdmin(user)) return true
+        if (isEditor(user)) return whereAuthorManager(payload, user)
+        return false
+      },
     },
     {
       name: 'status',
       type: 'select',
-      label: { es: 'Estado' },
-      required: true,
       options: statusOptions,
+      required: true,
       defaultValue: 'draft',
-      filterOptions: statusFilterOptions,
+      filterOptions: ({ options }) =>
+        options.filter((option) =>
+          typeof option === 'string' ? option !== 'sent' : option.value !== 'sent',
+        ),
       access: {
         create: () => false,
         update: ({ data, req: { user } }) =>
           data?.status !== 'sent' && (isAdmin(user) || isReviewer(user)),
       },
+      label: { es: 'Estado' },
     },
     {
       name: 'images',
       type: 'array',
-      label: { es: 'Imágenes' },
-      minRows: 1,
       fields: [
         {
           name: 'image',
@@ -165,22 +110,30 @@ export const Letters: CollectionConfig = {
           required: true,
         },
       ],
+      access: {
+        create: () => false,
+        update: ({ data }) => data?.status === 'draft',
+      },
+      label: { es: 'Imágenes' },
+      minRows: 1,
     },
     {
       name: 'recipients',
       type: 'relationship',
-      label: { es: 'Destinatarios' },
       relationTo: 'sponsors',
       hasMany: true,
-      filterOptions: bySelectedAuthor,
+      filterOptions: async ({ data, req: { payload } }) =>
+        whereAuthorSponsor(payload, data as Letter),
       access: {
-        update: ({ req: { user }, data }) => isAdmin(user) || isEditor(user),
+        update: ({ req: { user }, data }) =>
+          data?.status === 'draft' && (isAdmin(user) || isEditor(user)),
       },
+      label: { es: 'Destinatarios' },
     },
     {
       name: 'note',
       type: 'textarea',
-      label: { es: 'Nota' },
+      label: { es: 'Nota del revisor' },
       access: {
         create: ({ req: { user } }) => isAdmin(user) || isReviewer(user),
         update: ({ req: { user }, data }) =>
@@ -188,6 +141,41 @@ export const Letters: CollectionConfig = {
       },
     },
   ],
+  access: {
+    create: async ({ req: { payload, user }, data }) => {
+      if (!user) return false
+      if (isAdmin(user)) return true
+      if (isEditor(user)) return whereAuthorManager(payload, user)
+      return false
+    },
+    read: async ({ req: { payload, user }, data }) => {
+      if (!user) return false
+      if (isAdmin(user) || isReviewer(user)) return true
+      if (isEditor(user)) return whereAuthorManager(payload, user)
+      return false
+    },
+    update: async ({ req: { payload, user }, data }) => {
+      if (!user) return false
+      if (isAdmin(user) || isReviewer(user)) return true
+      if (isEditor(user)) return whereAuthorManager(payload, user)
+      return false
+    },
+    delete: async ({ req: { payload, user }, data }) => {
+      if (!user) return false
+      if (isAdmin(user)) return true
+      if (isEditor(user)) return whereAuthorManager(payload, user)
+      return false
+    },
+  },
+  admin: {
+    group: {
+      es: 'Cartas',
+    },
+  },
+  labels: {
+    singular: { es: 'Carta' },
+    plural: { es: 'Cartas' },
+  },
   hooks: {
     afterChange: [setLetterImageAuthor],
   },

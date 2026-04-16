@@ -1,34 +1,8 @@
-import type { CollectionConfig, Where } from 'payload'
-import { getManagedAuthorIds, isAdmin, isEditor, isReviewer } from './Users'
-import { User } from '@/payload-types'
+import type { CollectionConfig } from 'payload'
+import { isAdmin, isReviewer } from './Users'
 
-const whereManager = (user: User | null): Where => {
-  return { id: { in: getManagedAuthorIds(user) } }
-}
-
-export const ScholarshipHolder: CollectionConfig = {
+export const ScholarshipHolders: CollectionConfig = {
   slug: 'scholarship-holders',
-  labels: {
-    singular: { es: 'Becario' },
-    plural: { es: 'Becarios' },
-  },
-  admin: {
-    useAsTitle: 'name',
-    hidden: ({ user }) => !isAdmin(user),
-    group: {
-      es: 'Personas',
-    },
-  },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => {
-      if (isAdmin(user) || isReviewer(user)) return true
-      if (isEditor(user)) return whereManager(user)
-      return false
-    },
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
-  },
   fields: [
     {
       name: 'nationalId',
@@ -54,12 +28,21 @@ export const ScholarshipHolder: CollectionConfig = {
         { label: { es: 'Terciario' }, value: 'tertiary' },
       ],
     },
-    {
-      name: 'sponsors',
-      type: 'relationship',
-      label: { es: 'Padrinos' },
-      relationTo: 'sponsors',
-      hasMany: true,
-    },
   ],
+  access: {
+    create: ({ req: { user } }) => isAdmin(user),
+    update: ({ req: { user } }) => isAdmin(user),
+    delete: ({ req: { user } }) => isAdmin(user),
+  },
+  admin: {
+    useAsTitle: 'name',
+    hidden: ({ user }) => !isAdmin(user),
+    group: {
+      es: 'Personas',
+    },
+  },
+  labels: {
+    singular: { es: 'Becario' },
+    plural: { es: 'Becarios' },
+  },
 }

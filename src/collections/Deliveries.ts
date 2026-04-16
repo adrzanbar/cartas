@@ -9,7 +9,6 @@ export const Deliveries: CollectionConfig = {
   ],
   access: {
     create: () => false,
-    read: ({ req: { user } }) => isAdmin(user),
     update: () => false,
     delete: () => false,
   },
@@ -17,6 +16,7 @@ export const Deliveries: CollectionConfig = {
     group: {
       es: 'Administración',
     },
+    hidden: ({ user }) => !isAdmin(user),
   },
   labels: {
     singular: { es: 'Entrega' },

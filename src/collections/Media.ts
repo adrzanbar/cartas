@@ -5,10 +5,16 @@ export const setAlt: FieldHook = ({ value, data }) => value || data?.filename
 
 export const Media: CollectionConfig = {
   slug: 'media',
-  labels: {
-    singular: { es: 'Medio' },
-    plural: { es: 'Medios' },
-  },
+  fields: [
+    {
+      name: 'alt',
+      type: 'text',
+      required: true,
+      hooks: {
+        beforeChange: [setAlt],
+      },
+    },
+  ],
   access: {
     create: ({ req: { user } }) => isAdmin(user),
     read: () => true,
@@ -21,16 +27,9 @@ export const Media: CollectionConfig = {
     },
     hidden: ({ user }) => !isAdmin(user),
   },
-  fields: [
-    {
-      name: 'alt',
-      type: 'text',
-      label: { es: 'Texto alternativo' },
-      required: true,
-      hooks: {
-        beforeChange: [setAlt],
-      },
-    },
-  ],
+  labels: {
+    singular: { es: 'Medio' },
+    plural: { es: 'Medios' },
+  },
   upload: true,
 }
