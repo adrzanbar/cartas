@@ -58,7 +58,7 @@ class LetterSender {
     }
 
     const options: Record<string, (string | undefined)[] | string | null | undefined> = {
-      becario: letter.author.name,
+      becario: letter.author?.name,
       padrino: recipient.name,
       message: letter.campaign.message,
       letterImages: images.map((image) => image.cid),
