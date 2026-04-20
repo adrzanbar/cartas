@@ -47,41 +47,53 @@ const campaignFilter: FilterOptions<Letter> = () => ({
 })
 
 const createDeliveries: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
-  if (!doc.recipients || doc.recipients.length === 0) return doc
+  if (!doc.author) return
+  const currentRecipients = (doc.recipients || []).map((recipient) => getId(recipient))
   const { docs: authorDocs } = await req.payload.find({
     collection: 'scholarship-holders',
     depth: 0,
     limit: 1,
     req,
     pagination: false,
-    where: { id: { equals: doc.author } },
+    where: { id: { equals: getId(doc.author) } },
   })
-  if (doc.approved || authorDocs[0].educationLevel === 'tertiary') {
-    await Promise.all(
-      doc.recipients.map(async (recipient) => {
-        const recipientId = getId(recipient)
-        const { totalDocs } = await req.payload.find({
-          collection: 'deliveries',
-          depth: 0,
-          limit: 1,
-          pagination: false,
-          req,
-          where: {
-            and: [{ letter: { equals: doc.id } }, { recipient: { equals: recipientId } }],
-          },
-        })
-        if (totalDocs === 0) {
-          await req.payload.create({
+  const isTertiary = authorDocs[0]?.educationLevel === 'tertiary'
+  if (doc.approved || isTertiary) {
+    const { docs: existingDeliveries } = await req.payload.find({
+      collection: 'deliveries',
+      depth: 0,
+      pagination: false,
+      req,
+      where: { letter: { equals: doc.id } },
+    })
+    const existingRecipientIds = existingDeliveries.map((delivery) => getId(delivery.recipient))
+    const recipientsToCreate = currentRecipients.filter((id) => !existingRecipientIds.includes(id))
+    const deliveryIdsToDelete = existingDeliveries
+      .filter((delivery) => !currentRecipients.includes(getId(delivery.recipient)))
+      .map((delivery) => delivery.id)
+    if (recipientsToCreate.length > 0) {
+      await Promise.all(
+        recipientsToCreate.map((recipientId) =>
+          req.payload.create({
             collection: 'deliveries',
             req,
             data: {
               letter: doc.id,
               recipient: recipientId,
             },
-          })
-        }
-      }),
-    )
+          }),
+        ),
+      )
+    }
+    if (deliveryIdsToDelete.length > 0) {
+      await req.payload.delete({
+        collection: 'deliveries',
+        req,
+        where: {
+          id: { in: deliveryIdsToDelete },
+        },
+      })
+    }
   } else {
     await req.payload.delete({
       collection: 'deliveries',
@@ -185,7 +197,7 @@ export const Letters: CollectionConfig = {
       type: 'array',
       access: {
         create: () => false,
-        update: ({ data }) => !data?.approved,
+        update: ({ doc }) => !doc?.approved,
       },
       fields: [
         {
@@ -206,7 +218,7 @@ export const Letters: CollectionConfig = {
       type: 'relationship',
       relationTo: 'sponsors',
       access: {
-        update: ({ data }) => !data?.approved,
+        update: ({ doc }) => !doc?.approved,
       },
       hasMany: true,
       filterOptions: recipientsFilter,
