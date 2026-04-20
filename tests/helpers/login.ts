@@ -5,8 +5,9 @@ export interface LoginOptions {
   page: Page
   serverURL?: string
   user: {
-    email: string
-    password: string
+    email?: string | null
+    username?: string | null
+    password?: string | null // Match Payload's optional password type
   }
 }
 
@@ -20,7 +21,12 @@ export async function login({
 }: LoginOptions): Promise<void> {
   await page.goto(`${serverURL}/admin/login`)
 
-  await page.fill('#field-email', user.email)
+  const loginIdentity = user.email || user.username
+
+  if (!loginIdentity) throw new Error('Email or username required')
+  if (!user.password) throw new Error('Password required')
+
+  await page.fill('#field-email', loginIdentity)
   await page.fill('#field-password', user.password)
   await page.click('button[type="submit"]')
 

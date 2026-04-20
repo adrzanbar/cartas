@@ -3,11 +3,10 @@ import config from '../../src/payload.config.js'
 import { User } from '@/payload-types.js'
 
 export const testUser: Omit<User, 'id' | 'createdAt' | 'updatedAt' | 'collection'> = {
-  email: 'dev@payloadcms.com',
+  username: 'test',
   password: 'test',
   roles: ['admin'],
   name: 'Test User',
-  nationalId: '00000000',
 }
 
 /**
