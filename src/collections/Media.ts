@@ -1,8 +1,6 @@
 import { CollectionConfig, FieldHook } from 'payload'
 import { isAdmin } from './Users'
 
-export const setAlt: FieldHook = ({ value, data }) => value || data?.filename
-
 export const Media: CollectionConfig = {
   slug: 'media',
   labels: {
@@ -10,10 +8,8 @@ export const Media: CollectionConfig = {
     plural: { es: 'Medios' },
   },
   access: {
-    create: ({ req: { user } }) => isAdmin(user),
+    create: ({ req: { user } }) => (user ? isAdmin(user) : false),
     read: () => true,
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
   },
   admin: {
     group: {
@@ -27,9 +23,6 @@ export const Media: CollectionConfig = {
       type: 'text',
       label: { es: 'Texto alternativo' },
       required: true,
-      hooks: {
-        beforeChange: [setAlt],
-      },
     },
   ],
   upload: true,

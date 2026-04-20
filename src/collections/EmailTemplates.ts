@@ -3,23 +3,6 @@ import { isAdmin } from './Users'
 
 export const EmailTemplates: CollectionConfig = {
   slug: 'email-templates',
-  labels: {
-    singular: { es: 'Plantilla de correo' },
-    plural: { es: 'Plantillas de correo' },
-  },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => isAdmin(user),
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
-  },
-  admin: {
-    useAsTitle: 'name',
-    group: {
-      es: 'Administración',
-    },
-    hidden: ({ user }) => !isAdmin(user),
-  },
   fields: [
     {
       name: 'name',
@@ -30,11 +13,11 @@ export const EmailTemplates: CollectionConfig = {
     {
       name: 'template',
       type: 'code',
-      label: { es: 'Plantilla' },
-      required: true,
       admin: {
         language: 'handlebars',
       },
+      label: { es: 'Plantilla' },
+      required: true,
     },
     {
       name: 'images',
@@ -50,11 +33,28 @@ export const EmailTemplates: CollectionConfig = {
         {
           name: 'image',
           type: 'upload',
-          label: { es: 'Imagen' },
           relationTo: 'media',
+          label: { es: 'Imagen' },
           required: true,
         },
       ],
     },
   ],
+  access: {
+    create: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    read: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    update: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    delete: ({ req: { user } }) => (user ? isAdmin(user) : false),
+  },
+  admin: {
+    useAsTitle: 'name',
+    group: {
+      es: 'Administración',
+    },
+    hidden: ({ user }) => !isAdmin(user),
+  },
+  labels: {
+    singular: { es: 'Plantilla de correo' },
+    plural: { es: 'Plantillas de correo' },
+  },
 }

@@ -126,22 +126,34 @@ export interface Config {
   };
 }
 export interface UserAuthOperations {
-  forgotPassword: {
-    email: string;
-    password: string;
-  };
-  login: {
-    email: string;
-    password: string;
-  };
+  forgotPassword:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
+  login:
+    | {
+        email: string;
+        password: string;
+      }
+    | {
+        password: string;
+        username: string;
+      };
   registerFirstUser: {
-    email: string;
     password: string;
+    username: string;
+    email?: string;
   };
-  unlock: {
-    email: string;
-    password: string;
-  };
+  unlock:
+    | {
+        email: string;
+      }
+    | {
+        username: string;
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -149,13 +161,12 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
-  nationalId: string;
   name: string;
-  roles: ('admin' | 'editor' | 'reviewer')[];
-  managedAuthors?: (number | ScholarshipHolder)[] | null;
+  roles: ('admin' | 'reviewer' | 'mediator' | 'scholarshipHolder')[];
   updatedAt: string;
   createdAt: string;
-  email: string;
+  email?: string | null;
+  username: string;
   resetPasswordToken?: string | null;
   resetPasswordExpiration?: string | null;
   salt?: string | null;
@@ -171,32 +182,6 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "scholarship-holders".
- */
-export interface ScholarshipHolder {
-  id: number;
-  nationalId: string;
-  name: string;
-  educationLevel: 'primary' | 'secondary' | 'tertiary';
-  sponsors?: (number | Sponsor)[] | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sponsors".
- */
-export interface Sponsor {
-  id: number;
-  nationalId: string;
-  name: string;
-  organizationName?: string | null;
-  email?: string | null;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -219,14 +204,41 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scholarship-holders".
+ */
+export interface ScholarshipHolder {
+  id: number;
+  nationalId: string;
+  name: string;
+  educationLevel: 'primary' | 'secondary' | 'tertiary';
+  sponsors?: (number | Sponsor)[] | null;
+  mediator?: (number | null) | User;
+  user?: (number | null) | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors".
+ */
+export interface Sponsor {
+  id: number;
+  nationalId: string;
+  name: string;
+  organizationName?: string | null;
+  email?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "campaigns".
  */
 export interface Campaign {
   id: number;
   subject: string;
-  sendAt?: string | null;
-  active?: boolean | null;
-  'email-template': number | EmailTemplate;
+  sendAt: string;
+  emailTemplate: number | EmailTemplate;
   message?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -256,8 +268,7 @@ export interface EmailTemplate {
 export interface Letter {
   id: number;
   campaign: number | Campaign;
-  author: number | ScholarshipHolder;
-  status: 'draft' | 'approved' | 'sent';
+  author?: (number | null) | ScholarshipHolder;
   images?:
     | {
         image: number | LetterImage;
@@ -265,6 +276,7 @@ export interface Letter {
       }[]
     | null;
   recipients?: (number | Sponsor)[] | null;
+  approved?: boolean | null;
   note?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -275,7 +287,6 @@ export interface Letter {
  */
 export interface LetterImage {
   id: number;
-  alt: string;
   author?: (number | null) | ScholarshipHolder;
   updatedAt: string;
   createdAt: string;
@@ -297,6 +308,7 @@ export interface Delivery {
   id: number;
   letter: number | Letter;
   recipient: number | Sponsor;
+  sentAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -512,13 +524,12 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
-  nationalId?: T;
   name?: T;
   roles?: T;
-  managedAuthors?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
+  username?: T;
   resetPasswordToken?: T;
   resetPasswordExpiration?: T;
   salt?: T;
@@ -560,6 +571,8 @@ export interface ScholarshipHoldersSelect<T extends boolean = true> {
   name?: T;
   educationLevel?: T;
   sponsors?: T;
+  mediator?: T;
+  user?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -582,8 +595,7 @@ export interface SponsorsSelect<T extends boolean = true> {
 export interface CampaignsSelect<T extends boolean = true> {
   subject?: T;
   sendAt?: T;
-  active?: T;
-  'email-template'?: T;
+  emailTemplate?: T;
   message?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -612,7 +624,6 @@ export interface EmailTemplatesSelect<T extends boolean = true> {
 export interface LettersSelect<T extends boolean = true> {
   campaign?: T;
   author?: T;
-  status?: T;
   images?:
     | T
     | {
@@ -620,6 +631,7 @@ export interface LettersSelect<T extends boolean = true> {
         id?: T;
       };
   recipients?: T;
+  approved?: T;
   note?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -629,7 +641,6 @@ export interface LettersSelect<T extends boolean = true> {
  * via the `definition` "letter-images_select".
  */
 export interface LetterImagesSelect<T extends boolean = true> {
-  alt?: T;
   author?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -650,6 +661,7 @@ export interface LetterImagesSelect<T extends boolean = true> {
 export interface DeliveriesSelect<T extends boolean = true> {
   letter?: T;
   recipient?: T;
+  sentAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

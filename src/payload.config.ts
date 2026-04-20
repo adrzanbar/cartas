@@ -8,15 +8,15 @@ import { Campaigns } from './collections/Campaigns'
 import { LetterImages } from './collections/LetterImages'
 import { Letters } from './collections/Letters'
 import { Media } from './collections/Media'
-import { ScholarshipHolder } from './collections/ScholarshipHolders'
+import { ScholarshipHolders } from './collections/ScholarshipHolders'
 import { Sponsors } from './collections/Sponsors'
 import { Users } from './collections/Users'
 import { es } from '@payloadcms/translations/languages/es'
 import { EmailTemplates } from './collections/EmailTemplates'
-import { SendDueLetters } from './tasks/send-due-letters'
 import { migrations } from './migrations'
 import { httpOAuthAdapter } from './adapters/email-http-oauth'
 import { Deliveries } from './collections/Deliveries'
+import { SendDueLetters } from './tasks/send-due-letters'
 
 export default buildConfig({
   admin: {
@@ -38,7 +38,7 @@ export default buildConfig({
   collections: [
     Users,
     Media,
-    ScholarshipHolder,
+    ScholarshipHolders,
     Sponsors,
     Campaigns,
     EmailTemplates,
@@ -70,6 +70,7 @@ export default buildConfig({
     supportedLanguages: { es },
     fallbackLanguage: 'es',
   },
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
   jobs: {
     addParentToTaskLog: true,
     tasks: [SendDueLetters],
@@ -80,5 +81,4 @@ export default buildConfig({
       },
     ],
   },
-  serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
 })

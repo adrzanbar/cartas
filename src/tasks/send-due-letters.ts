@@ -1,9 +1,9 @@
+import { LetterImage, Letter, Sponsor, ScholarshipHolder } from '@/payload-types'
 import Handlebars from 'handlebars'
-import type { BasePayload, TaskConfig } from 'payload'
-import path from 'path'
-import fs from 'fs/promises'
-import { Letter, LetterImage, Sponsor } from '@/payload-types'
 import { Attachment } from 'nodemailer/lib/mailer'
+import path from 'path'
+import { BasePayload, TaskConfig } from 'payload'
+import fs from 'fs/promises'
 
 class LetterSender {
   templates: Map<number, HandlebarsTemplateDelegate<any>> = new Map()
@@ -22,26 +22,14 @@ class LetterSender {
   sendLetter = async (letter: Letter, recipient: Sponsor) => {
     if (!recipient.email) throw new Error('Invalid recipient email')
     if (typeof letter.campaign === 'number') throw new Error('Invalid campaign')
-    if (typeof letter.campaign['email-template'] === 'number')
-      throw new Error('Invalid email template')
+    if (typeof letter.campaign.emailTemplate === 'number') throw new Error('Invalid email template')
     if (typeof letter.author === 'number') throw new Error('Invalid author')
-    if (!letter.images) throw new Error('No letter images to send')
+    if (!letter.images || letter.images.length === 0) throw new Error('No letter images to send')
 
-    const instagram = letter.campaign['email-template'].images?.filter(
-      (image) => image.name === 'instagram',
-    )[0].image
-    const letterIcon = letter.campaign['email-template'].images?.filter(
-      (image) => image.name === 'letter',
-    )[0].image
-
-    if (typeof instagram === 'number' || typeof letterIcon === 'number') {
-      throw new Error('Invalid template images')
-    }
-
-    let template = this.templates.get(letter.campaign['email-template'].id)
+    let template = this.templates.get(letter.campaign.emailTemplate.id)
     if (!template) {
-      template = Handlebars.compile(letter.campaign['email-template'].template)
-      this.templates.set(letter.campaign['email-template'].id, template)
+      template = Handlebars.compile(letter.campaign.emailTemplate.template)
+      this.templates.set(letter.campaign.emailTemplate.id, template)
     }
 
     const images: Attachment[] = []
@@ -69,14 +57,19 @@ class LetterSender {
       }
     }
 
-    const html = template({
+    const options: Record<string, (string | undefined)[] | string | null | undefined> = {
       becario: letter.author.name,
       padrino: recipient.name,
       message: letter.campaign.message,
-      instagram: instagram?.url,
-      letter: letterIcon?.url,
       letterImages: images.map((image) => image.cid),
-    })
+    }
+
+    for (const image of letter.campaign.emailTemplate.images ?? []) {
+      if (typeof image.image === 'number') throw new Error('Invalid email template image')
+      options[image.name] = image.image.url
+    }
+
+    const html = template(options)
 
     await this.payload.sendEmail({
       to: recipient.email,
@@ -87,7 +80,15 @@ class LetterSender {
   }
 }
 
-export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
+export interface SendDueLettersIO {
+  input: Record<string, unknown>
+  output: {
+    sent: number
+    failed: number
+  }
+}
+
+export const SendDueLetters: TaskConfig<SendDueLettersIO> = {
   slug: 'SendDueLetters',
   schedule: [
     {
@@ -99,113 +100,57 @@ export const SendDueLetters: TaskConfig<'SendDueLetters'> = {
     { name: 'sent', type: 'number', required: true },
     { name: 'failed', type: 'number', required: true },
   ],
-  handler: async ({ req }) => {
+  handler: async ({ req: { payload } }) => {
     console.log('[SendDueLetters] task started')
-    const { payload } = req
     const sender = new LetterSender(payload)
 
-    const { docs: campaigns, totalDocs } = await payload.find({
-      collection: 'campaigns',
+    let sentCount = 0
+    let failedCount = 0
+
+    const { docs, totalDocs } = await payload.find({
+      collection: 'deliveries',
       where: {
         and: [
-          { active: { equals: true } },
-          { sendAt: { less_than_equal: new Date().toISOString() } },
+          { 'letter.campaign.sendAt': { less_than_equal: new Date().toISOString() } },
+          {
+            or: [{ sentAt: { exists: false } }],
+          },
         ],
       },
-      pagination: false,
+      depth: 4,
     })
 
-    let totalSent = 0
-    let totalFailed = 0
+    console.log(`[SendDueLetters] ${totalDocs} due deliveries`)
 
-    for (const campaign of campaigns) {
-      const { docs: letters } = await payload.find({
-        collection: 'letters',
-        where: {
-          and: [{ campaign: { equals: campaign.id } }, { status: { equals: 'approved' } }],
-        },
-        depth: 3,
-      })
+    for (const delivery of docs) {
+      const letter = delivery.letter as Letter
+      const recipient = delivery.recipient as Sponsor
+      const author = letter.author as ScholarshipHolder
+      console.log(
+        `[SendDueLetters] Sending letter from ${author.name} to recipient ${recipient.email}`,
+      )
+      try {
+        if (typeof delivery.letter === 'number') throw new Error('Invalid letter in delivery')
+        if (typeof delivery.recipient === 'number') throw new Error('Invalid recipient in delivery')
 
-      let allSent = true
-
-      for (const letter of letters) {
-        const { recipients } = letter
-
-        if (!recipients) continue
-
-        for (const recipient of recipients) {
-          if (typeof recipient === 'number') {
-            console.warn(`[SendDueLetters] failed to get recipient data for ${recipient}, skipping`)
-            continue
-          }
-          try {
-            const { docs } = await payload.find({
-              collection: 'deliveries',
-              where: {
-                and: [{ letter: { equals: letter.id } }, { recipient: { equals: recipient.id } }],
-              },
-              limit: 1,
-            })
-            if (docs[0]) continue
-
-            await sender.sendLetter(letter, recipient)
-
-            await payload.create({
-              collection: 'deliveries',
-              data: {
-                letter: letter.id,
-                recipient: recipient.id,
-              },
-            })
-
-            totalSent++
-          } catch (err: any) {
-            console.warn(`[SendDueLetters]`, err)
-            totalFailed++
-          }
-        }
-
-        const { docs } = await payload.find({
-          collection: 'deliveries',
-          where: {
-            and: [
-              { letter: { equals: letter.id } },
-              {
-                recipient: {
-                  in: letter.recipients?.map((recipient) =>
-                    typeof recipient === 'number' ? recipient : recipient.id,
-                  ),
-                },
-              },
-            ],
-          },
-        })
-        const sent = docs.length === letter.recipients?.length
-
-        if (sent) {
-          await payload.update({
-            collection: 'letters',
-            id: letter.id,
-            data: {
-              status: 'sent',
-            },
-          })
-        }
-
-        allSent &&= sent
-      }
-
-      if (allSent) {
+        await sender.sendLetter(delivery.letter, delivery.recipient)
         await payload.update({
-          collection: 'campaigns',
-          id: campaign.id,
-          data: { active: false },
+          collection: 'deliveries',
+          id: delivery.id,
+          data: { sentAt: new Date().toISOString() },
         })
+        sentCount++
+      } catch (error) {
+        console.error(`[SendDueLetters] Failed to send letter for delivery ${delivery.id}:`, error)
+        failedCount++
       }
     }
 
-    console.log(`[SendDueLetters] done — sent: ${totalSent}, failed: ${totalFailed}`)
-    return { output: { sent: totalSent, failed: totalFailed } }
+    return {
+      output: {
+        sent: sentCount,
+        failed: failedCount,
+      },
+    }
   },
 }

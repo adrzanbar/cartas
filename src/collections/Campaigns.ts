@@ -1,10 +1,5 @@
 import { CollectionConfig } from 'payload'
-import { isAdmin, isEditor, isReviewer } from './Users'
-
-const whereActive = () => ({
-  active: { equals: true },
-  sendAt: { less_than_equal: new Date().toISOString() },
-})
+import { isAdmin } from './Users'
 
 export const Campaigns: CollectionConfig = {
   slug: 'campaigns',
@@ -12,46 +7,32 @@ export const Campaigns: CollectionConfig = {
     singular: { es: 'Campaña' },
     plural: { es: 'Campañas' },
   },
-  access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => {
-      if (isAdmin(user) || isReviewer(user)) return true
-      if (isEditor(user)) return whereActive()
-      return false
-    },
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
-  },
-  admin: {
-    useAsTitle: 'subject',
-    group: {
-      es: 'Administración',
-    },
-    hidden: ({ user }) => !isAdmin(user),
-  },
   fields: [
     {
       name: 'subject',
       type: 'text',
+      hasMany: false,
       label: { es: 'Asunto' },
+      minLength: 1,
       required: true,
     },
     {
       name: 'sendAt',
       type: 'date',
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+          displayFormat: "d 'de' MMMM yyyy, h:mm aa",
+        },
+      },
       label: { es: 'Enviar el' },
+      required: true,
     },
     {
-      name: 'active',
-      type: 'checkbox',
-      label: { es: 'Activa' },
-      defaultValue: true,
-    },
-    {
-      name: 'email-template',
+      name: 'emailTemplate',
       type: 'relationship',
-      label: { es: 'Plantilla de correo' },
       relationTo: 'email-templates',
+      label: { es: 'Plantilla de correo' },
       required: true,
     },
     {
@@ -60,4 +41,16 @@ export const Campaigns: CollectionConfig = {
       label: { es: 'Mensaje' },
     },
   ],
+  access: {
+    create: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    update: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    delete: ({ req: { user } }) => (user ? isAdmin(user) : false),
+  },
+  admin: {
+    useAsTitle: 'subject',
+    group: {
+      es: 'Administración',
+    },
+    hidden: ({ user }) => !isAdmin(user),
+  },
 }

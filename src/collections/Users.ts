@@ -1,35 +1,77 @@
 import { User } from '@/payload-types'
 import type { ClientUser, CollectionConfig } from 'payload'
 
-export const isAdmin = (user: User | ClientUser | null) => {
+export const isAdmin = (user: User | ClientUser) => {
   return user?.roles?.includes('admin') ?? false
 }
-export const isReviewer = (user: User | null) => {
+export const isReviewer = (user: User) => {
   return user?.roles?.includes('reviewer') ?? false
 }
-export const isEditor = (user: User | null) => {
-  return user?.roles?.includes('editor') ?? false
+export const isMediator = (user: User) => {
+  return user?.roles?.includes('mediator') ?? false
 }
-export const getManagedAuthorIds = (user: User | null): number[] =>
-  (user?.managedAuthors ?? []).map((a) => (typeof a === 'number' ? a : a.id))
+export const isScholarshipHolder = (user: User) => {
+  return user?.roles?.includes('scholarshipHolder') ?? false
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
-  labels: {
-    singular: { es: 'Usuario' },
-    plural: { es: 'Usuarios' },
-  },
+  fields: [
+    {
+      name: 'name',
+      type: 'text',
+      access: {
+        update: ({ req: { user } }) => (user ? isAdmin(user) : false),
+      },
+      label: { es: 'Nombre' },
+      required: true,
+    },
+    {
+      name: 'username',
+      type: 'text',
+      access: {
+        update: ({ req: { user } }) => (user ? isAdmin(user) : false),
+      },
+      required: true,
+      unique: true,
+    },
+    {
+      name: 'roles',
+      type: 'select',
+      access: {
+        update: ({ req: { user } }) => (user ? isAdmin(user) : false),
+      },
+      hasMany: true,
+      label: { es: 'Roles' },
+      required: true,
+      options: [
+        { label: { es: 'Administrador' }, value: 'admin' },
+        { label: { es: 'Revisor' }, value: 'reviewer' },
+        { label: { es: 'Mediador' }, value: 'mediator' },
+        { label: { es: 'Becario' }, value: 'scholarshipHolder' },
+      ],
+    },
+  ],
   access: {
-    create: ({ req: { user } }) => isAdmin(user),
-    read: ({ req: { user } }) => isAdmin(user),
-    update: ({ req: { user } }) => isAdmin(user),
-    delete: ({ req: { user } }) => isAdmin(user),
+    create: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    read: ({ req: { user } }) => {
+      if (!user) return false
+      if (isAdmin(user)) return true
+      return { id: { equals: user.id } }
+    },
+    update: ({ req: { user } }) => {
+      if (!user) return false
+      if (isAdmin(user)) return true
+      return { id: { equals: user.id } }
+    },
+    delete: ({ req: { user } }) => (user ? isAdmin(user) : false),
   },
   admin: {
-    useAsTitle: 'email',
+    useAsTitle: 'username',
     group: {
       es: 'Administración',
     },
+    hidden: ({ user }) => !isAdmin(user),
   },
   auth: {
     forgotPassword: {
@@ -39,39 +81,12 @@ export const Users: CollectionConfig = {
         `
       },
     },
+    loginWithUsername: {
+      allowEmailLogin: true,
+    },
   },
-  fields: [
-    {
-      name: 'nationalId',
-      type: 'text',
-      label: { es: 'Documento de identidad' },
-      required: true,
-      unique: true,
-    },
-    {
-      name: 'name',
-      type: 'text',
-      label: { es: 'Nombre' },
-      required: true,
-    },
-    {
-      name: 'roles',
-      type: 'select',
-      label: { es: 'Roles' },
-      required: true,
-      hasMany: true,
-      options: [
-        { label: { es: 'Administrador' }, value: 'admin' },
-        { label: { es: 'Editor' }, value: 'editor' },
-        { label: { es: 'Revisor' }, value: 'reviewer' },
-      ],
-    },
-    {
-      name: 'managedAuthors',
-      type: 'relationship',
-      label: { es: 'Autores gestionados' },
-      relationTo: 'scholarship-holders',
-      hasMany: true,
-    },
-  ],
+  labels: {
+    singular: { es: 'Usuario' },
+    plural: { es: 'Usuarios' },
+  },
 }
