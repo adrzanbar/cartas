@@ -223,7 +223,6 @@ export interface ScholarshipHolder {
  */
 export interface Sponsor {
   id: number;
-  nationalId: string;
   name: string;
   organizationName?: string | null;
   email?: string | null;
@@ -581,7 +580,6 @@ export interface ScholarshipHoldersSelect<T extends boolean = true> {
  * via the `definition` "sponsors_select".
  */
 export interface SponsorsSelect<T extends boolean = true> {
-  nationalId?: T;
   name?: T;
   organizationName?: T;
   email?: T;

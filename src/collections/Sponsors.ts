@@ -5,13 +5,6 @@ export const Sponsors: CollectionConfig = {
   slug: 'sponsors',
   fields: [
     {
-      name: 'nationalId',
-      type: 'text',
-      label: { es: 'Documento de identidad' },
-      required: true,
-      unique: true,
-    },
-    {
       name: 'name',
       type: 'text',
       label: { es: 'Nombre' },
@@ -27,6 +20,7 @@ export const Sponsors: CollectionConfig = {
       name: 'email',
       type: 'email',
       label: { es: 'Correo electrónico' },
+      unique: true,
     },
   ],
   access: {
