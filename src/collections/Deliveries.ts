@@ -18,12 +18,13 @@ export const Deliveries: CollectionConfig = {
       label: { es: 'Destinatario' },
       required: true,
     },
-    { name: 'sentAt', type: 'date', label: { es: 'Enviada en' } },
+    { name: 'sentAt', type: 'date', label: { es: 'Fecha de envío' } },
   ],
   admin: {
     group: {
       es: 'Administración',
     },
+    hideAPIURL: true,
   },
   access: {
     create: () => false,

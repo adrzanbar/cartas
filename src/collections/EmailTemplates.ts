@@ -52,6 +52,7 @@ export const EmailTemplates: CollectionConfig = {
       es: 'Administración',
     },
     hidden: ({ user }) => !isAdmin(user),
+    hideAPIURL: true,
   },
   labels: {
     singular: { es: 'Plantilla de correo' },

@@ -16,6 +16,7 @@ export const Media: CollectionConfig = {
       es: 'Administración',
     },
     hidden: ({ user }) => !isAdmin(user),
+    hideAPIURL: true,
   },
   fields: [
     {

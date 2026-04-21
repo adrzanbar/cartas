@@ -2,18 +2,16 @@ import type { Access, CollectionConfig, Where } from 'payload'
 import { isAdmin, isMediator, isReviewer, isScholarshipHolder } from './Users'
 import { LetterImage } from '@/payload-types'
 
-export const access: Access<LetterImage> = ({ req: { user }, data }) => {
+export const access: Access<LetterImage> = ({ req: { user } }) => {
   if (!user) return false
   if (isAdmin(user) || isReviewer(user)) return true
-  if (!data?.author) return true
-  const or: Where[] = []
-  if (isScholarshipHolder(user)) {
-    or.push({ 'author.user': { equals: user.id } })
-  }
+  const or: Where[] = [{ owner: { equals: user.id } }]
   if (isMediator(user)) {
     or.push({ 'author.mediator': { equals: user.id } })
   }
-  if (or.length === 0) return false
+  if (isScholarshipHolder(user)) {
+    or.push({ 'author.user': { equals: user.id } })
+  }
   return { or }
 }
 
@@ -25,12 +23,23 @@ export const LetterImages: CollectionConfig = {
       type: 'relationship',
       relationTo: 'scholarship-holders',
       access: {
+        create: () => false,
+        read: ({ req: { user } }) => (user ? isAdmin(user) : false),
         update: () => false,
       },
-      admin: {
-        hidden: true,
-      },
       label: { es: 'Autor' },
+    },
+    {
+      name: 'owner',
+      type: 'relationship',
+      relationTo: 'users',
+      access: {
+        create: () => false,
+        read: ({ req: { user } }) => (user ? isAdmin(user) : false),
+        update: () => false,
+      },
+      defaultValue: ({ user }) => (user ? user.id : undefined),
+      label: { es: 'Dueño' },
     },
   ],
   access: {
@@ -44,6 +53,7 @@ export const LetterImages: CollectionConfig = {
     group: {
       es: 'Cartas',
     },
+    hideAPIURL: true,
   },
   labels: {
     singular: { es: 'Imagen de Carta' },

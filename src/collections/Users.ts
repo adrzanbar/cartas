@@ -1,18 +1,18 @@
 import { User } from '@/payload-types'
 import type { ClientUser, CollectionConfig } from 'payload'
 
-export const isAdmin = (user: User | ClientUser) => {
-  return user?.roles?.includes('admin') ?? false
-}
-export const isReviewer = (user: User) => {
-  return user?.roles?.includes('reviewer') ?? false
-}
-export const isMediator = (user: User) => {
-  return user?.roles?.includes('mediator') ?? false
-}
-export const isScholarshipHolder = (user: User) => {
-  return user?.roles?.includes('scholarshipHolder') ?? false
-}
+export const isAdmin = (user: User | ClientUser) => user?.roles?.includes('admin') ?? false
+
+export const isReviewer = (user: User) =>
+  (['reviewer', 'tertiary-reviewer'] as const).some((role) => user.roles.includes(role))
+
+export const isTertiaryReviewer = (user: User) =>
+  user?.roles?.includes('tertiary-reviewer') ?? false
+
+export const isMediator = (user: User) => user?.roles?.includes('mediator') ?? false
+
+export const isScholarshipHolder = (user: User) =>
+  user?.roles?.includes('scholarshipHolder') ?? false
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -46,6 +46,7 @@ export const Users: CollectionConfig = {
       required: true,
       options: [
         { label: { es: 'Administrador' }, value: 'admin' },
+        { label: { es: 'Revisor de terciarios' }, value: 'tertiary-reviewer' },
         { label: { es: 'Revisor' }, value: 'reviewer' },
         { label: { es: 'Mediador' }, value: 'mediator' },
         { label: { es: 'Becario' }, value: 'scholarshipHolder' },
@@ -67,11 +68,12 @@ export const Users: CollectionConfig = {
     delete: ({ req: { user } }) => (user ? isAdmin(user) : false),
   },
   admin: {
-    useAsTitle: 'username',
+    hidden: ({ user }) => !isAdmin(user),
+    hideAPIURL: true,
     group: {
       es: 'Administración',
     },
-    hidden: ({ user }) => !isAdmin(user),
+    useAsTitle: 'name',
   },
   auth: {
     forgotPassword: {

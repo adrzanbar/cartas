@@ -162,7 +162,7 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   name: string;
-  roles: ('admin' | 'reviewer' | 'mediator' | 'scholarshipHolder')[];
+  roles: ('admin' | 'tertiary-reviewer' | 'reviewer' | 'mediator' | 'scholarshipHolder')[];
   updatedAt: string;
   createdAt: string;
   email?: string | null;
@@ -235,6 +235,7 @@ export interface Sponsor {
  */
 export interface Campaign {
   id: number;
+  name: string;
   subject: string;
   sendAt: string;
   emailTemplate: number | EmailTemplate;
@@ -268,6 +269,7 @@ export interface Letter {
   id: number;
   campaign: number | Campaign;
   author?: (number | null) | ScholarshipHolder;
+  authorName?: string | null;
   images?:
     | {
         image: number | LetterImage;
@@ -287,6 +289,7 @@ export interface Letter {
 export interface LetterImage {
   id: number;
   author?: (number | null) | ScholarshipHolder;
+  owner?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -591,6 +594,7 @@ export interface SponsorsSelect<T extends boolean = true> {
  * via the `definition` "campaigns_select".
  */
 export interface CampaignsSelect<T extends boolean = true> {
+  name?: T;
   subject?: T;
   sendAt?: T;
   emailTemplate?: T;
@@ -622,6 +626,7 @@ export interface EmailTemplatesSelect<T extends boolean = true> {
 export interface LettersSelect<T extends boolean = true> {
   campaign?: T;
   author?: T;
+  authorName?: T;
   images?:
     | T
     | {
@@ -640,6 +645,7 @@ export interface LettersSelect<T extends boolean = true> {
  */
 export interface LetterImagesSelect<T extends boolean = true> {
   author?: T;
+  owner?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

@@ -20,6 +20,13 @@ import { SendDueLetters } from './tasks/send-due-letters'
 
 export default buildConfig({
   admin: {
+    components: {
+      graphics: { Icon: '@/components/icon', Logo: '@/components/logo' },
+    },
+    dateFormat: "d 'de' MMMM yyyy",
+    importMap: {
+      baseDir: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
+    },
     meta: {
       titleSuffix: '- FONBEC Cartas',
       icons: {
@@ -27,13 +34,6 @@ export default buildConfig({
       },
     },
     user: Users.slug,
-    importMap: {
-      baseDir: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
-    },
-    dateFormat: "d 'de' MMMM yyyy",
-    components: {
-      graphics: { Icon: '@/components/icon', Logo: '@/components/logo' },
-    },
   },
   collections: [
     Users,

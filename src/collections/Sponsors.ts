@@ -34,6 +34,7 @@ export const Sponsors: CollectionConfig = {
     group: {
       es: 'Personas',
     },
+    hideAPIURL: true,
   },
   labels: {
     singular: { es: 'Padrino' },

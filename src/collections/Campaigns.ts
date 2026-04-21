@@ -9,9 +9,15 @@ export const Campaigns: CollectionConfig = {
   },
   fields: [
     {
+      name: 'name',
+      type: 'text',
+      label: { es: 'Nombre' },
+      minLength: 1,
+      required: true,
+    },
+    {
       name: 'subject',
       type: 'text',
-      hasMany: false,
       label: { es: 'Asunto' },
       minLength: 1,
       required: true,
@@ -47,10 +53,11 @@ export const Campaigns: CollectionConfig = {
     delete: ({ req: { user } }) => (user ? isAdmin(user) : false),
   },
   admin: {
-    useAsTitle: 'subject',
+    useAsTitle: 'name',
     group: {
       es: 'Administración',
     },
     hidden: ({ user }) => !isAdmin(user),
+    hideAPIURL: true,
   },
 }

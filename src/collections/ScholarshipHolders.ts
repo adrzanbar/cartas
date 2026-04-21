@@ -152,6 +152,7 @@ export const ScholarshipHolders: CollectionConfig = {
     group: {
       es: 'Personas',
     },
+    hideAPIURL: true,
   },
   hooks: {
     beforeChange: [createUser],

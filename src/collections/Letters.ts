@@ -8,7 +8,7 @@ import type {
   Where,
 } from 'payload'
 import { Letter, LetterImage } from '@/payload-types'
-import { isAdmin, isReviewer, isScholarshipHolder, isMediator } from './Users'
+import { isAdmin, isReviewer, isScholarshipHolder, isMediator, isTertiaryReviewer } from './Users'
 import { getId } from '@/utils'
 
 export const createAccess: Access<LetterImage> = ({ req: { user } }) => {
@@ -27,7 +27,7 @@ export const createAccess: Access<LetterImage> = ({ req: { user } }) => {
 
 export const readAccess: Access<LetterImage> = ({ req: { user } }) => {
   if (!user) return false
-  if (isAdmin(user)) return true
+  if (isAdmin(user) || isTertiaryReviewer(user)) return true
   const or: Where[] = []
   if (isReviewer(user)) {
     or.push({ 'author.educationLevel': { not_equals: 'tertiary' } })
@@ -49,16 +49,7 @@ const campaignFilter: FilterOptions<Letter> = () => ({
 const createDeliveries: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
   if (!doc.author) return
   const currentRecipients = (doc.recipients || []).map((recipient) => getId(recipient))
-  const { docs: authorDocs } = await req.payload.find({
-    collection: 'scholarship-holders',
-    depth: 0,
-    limit: 1,
-    req,
-    pagination: false,
-    where: { id: { equals: getId(doc.author) } },
-  })
-  const isTertiary = authorDocs[0]?.educationLevel === 'tertiary'
-  if (doc.approved || isTertiary) {
+  if (doc.approved) {
     const { docs: existingDeliveries } = await req.payload.find({
       collection: 'deliveries',
       depth: 0,
@@ -181,22 +172,17 @@ export const Letters: CollectionConfig = {
       required: true,
     },
     {
-      name: 'warning',
-      type: 'ui',
+      name: 'authorName',
+      type: 'text',
+      virtual: 'author.name',
       admin: {
-        components: {
-          Field: '@/components/letter-image-description#LetterImageDescription',
-        },
-        disableListColumn: true,
-        disableBulkEdit: true,
-        condition: (data, siblingData, { operation }) => operation === 'create',
+        hidden: true,
       },
     },
     {
       name: 'images',
       type: 'array',
       access: {
-        create: () => false,
         update: ({ doc }) => !doc?.approved,
       },
       fields: [
@@ -268,6 +254,8 @@ export const Letters: CollectionConfig = {
     group: {
       es: 'Cartas',
     },
+    useAsTitle: 'authorName',
+    hideAPIURL: true,
   },
   hooks: {
     afterChange: [createDeliveries],
