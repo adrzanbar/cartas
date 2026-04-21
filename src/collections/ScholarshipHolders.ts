@@ -1,4 +1,11 @@
-import type { Access, CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
+import type {
+  Access,
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
+  CollectionBeforeChangeHook,
+  CollectionConfig,
+  Where,
+} from 'payload'
 import { isAdmin, isMediator, isReviewer, isScholarshipHolder } from './Users'
 import { ScholarshipHolder } from '@/payload-types'
 
@@ -37,6 +44,51 @@ const createUser: CollectionBeforeChangeHook<ScholarshipHolder> = async ({
   })
   data.user = user.id
   return data
+}
+
+const updateUser: CollectionAfterChangeHook<ScholarshipHolder> = async ({
+  doc,
+  previousDoc,
+  operation,
+  req: { payload },
+}) => {
+  if (operation === 'update' && doc.user) {
+    if (doc.nationalId !== previousDoc.nationalId) {
+      const userId = typeof doc.user === 'object' ? doc.user.id : doc.user
+      try {
+        await payload.update({
+          collection: 'users',
+          id: userId,
+          data: {
+            username: normalize(doc.nationalId),
+          },
+        })
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        payload.logger.error(`Could not update linked user ${userId}: ${errorMessage}`)
+      }
+    }
+  }
+  return doc
+}
+
+const deleteUser: CollectionAfterDeleteHook<ScholarshipHolder> = async ({
+  doc,
+  req: { payload },
+}) => {
+  if (doc.user) {
+    const userId = typeof doc.user === 'object' ? doc.user.id : doc.user
+    try {
+      await payload.delete({
+        collection: 'users',
+        id: userId,
+      })
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      payload.logger.error(`Could not delete linked user ${userId}: ${errorMessage}`)
+    }
+  }
+  return doc
 }
 
 export const ScholarshipHolders: CollectionConfig = {
@@ -103,6 +155,8 @@ export const ScholarshipHolders: CollectionConfig = {
   },
   hooks: {
     beforeChange: [createUser],
+    afterChange: [updateUser],
+    afterDelete: [deleteUser],
   },
   labels: {
     singular: { es: 'Becario' },
