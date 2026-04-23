@@ -1,11 +1,13 @@
-import type {
-  Access,
-  CollectionAfterChangeHook,
-  CollectionConfig,
-  DefaultValue,
-  FieldHook,
-  FilterOptions,
-  Where,
+import {
+  type Access,
+  type CollectionAfterChangeHook,
+  type CollectionConfig,
+  type DefaultValue,
+  type FieldHook,
+  type FilterOptions,
+  type Where,
+  type CollectionBeforeChangeHook,
+  APIError,
 } from 'payload'
 import { Letter, LetterImage } from '@/payload-types'
 import { isAdmin, isReviewer, isScholarshipHolder, isMediator, isTertiaryReviewer } from './Users'
@@ -140,7 +142,7 @@ const defaultAuthor: DefaultValue = async ({ user, req }) => {
   }
 }
 
-export const recipientsFilter: FilterOptions = async ({ data, req }) => {
+const recipientsFilter: FilterOptions = async ({ data, req }) => {
   if (!data || !data.author) return { id: { in: [] } }
   const scholarshipHolder = await req.payload.findByID({
     collection: 'scholarship-holders',
@@ -148,6 +150,37 @@ export const recipientsFilter: FilterOptions = async ({ data, req }) => {
     req,
   })
   return { id: { in: scholarshipHolder.sponsors?.map(getId) } }
+}
+
+const ensureUniqueCampaignAuthorRecipient: CollectionBeforeChangeHook<Letter> = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  const message = 'Solo se permite una carta por padrino por campaña'
+  const { payload } = req
+  const id = data.id || originalDoc?.id
+  const author = data.author || originalDoc?.author
+  const campaign = data.campaign || originalDoc?.campaign
+  const recipients = data.recipients || originalDoc?.recipients
+  if (!recipients || !author || !campaign) return data
+  if (!recipients) return data
+  const { docs, totalDocs } = await payload.find({
+    req,
+    collection: 'letters',
+    where: {
+      and: [
+        { author: { equals: author } },
+        { campaign: { equals: campaign } },
+        { recipients: { in: recipients } },
+      ],
+    },
+  })
+  if (operation === 'create' && totalDocs > 0) throw new APIError(message, 400, undefined, true)
+  if (operation === 'update' && docs.some((doc) => doc.id !== id))
+    throw new APIError(message, 400, undefined, true)
+  return data
 }
 
 export const Letters: CollectionConfig = {
@@ -257,6 +290,7 @@ export const Letters: CollectionConfig = {
     },
   },
   hooks: {
+    beforeChange: [ensureUniqueCampaignAuthorRecipient],
     afterChange: [syncDeliveries],
   },
   labels: {
