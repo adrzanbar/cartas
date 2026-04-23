@@ -288,11 +288,12 @@ export const Letters: CollectionConfig = {
     delete: createAccess,
   },
   admin: {
+    defaultColumns: ['campaign', 'author', 'recipients'],
+    hideAPIURL: true,
     group: {
       es: 'Cartas',
     },
     useAsTitle: 'name',
-    hideAPIURL: true,
   },
   hooks: {
     afterChange: [createDeliveries],
