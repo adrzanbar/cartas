@@ -42,6 +42,16 @@ export const readAccess: Access<LetterImage> = ({ req: { user } }) => {
   return { or }
 }
 
+const updateAccess: Access<LetterImage> = async ({ req }) => {
+  const read = await readAccess({ req })
+
+  if (typeof read === 'boolean') return read
+
+  const or = [...(read.or || []), { 'campaign.sendAt': { greater_than: new Date().toISOString() } }]
+
+  return { or }
+}
+
 const campaignFilter: FilterOptions<Letter> = () => ({
   sendAt: { greater_than: new Date().toISOString() },
 })
@@ -142,6 +152,26 @@ export const recipientsFilter: FilterOptions = async ({ data, req }) => {
   return { id: { in: sponsorIds } }
 }
 
+const defaultName: DefaultValue = async ({ req }) => {
+  const { data } = req
+  if (!data) return
+
+  const campaign = await req.payload.findByID({
+    collection: 'campaigns',
+    id: getId(data.campaign),
+    req,
+    depth: 0,
+  })
+  const author = await req.payload.findByID({
+    collection: 'scholarship-holders',
+    id: getId(data.author),
+    req,
+    depth: 0,
+  })
+
+  return campaign.name + ': ' + author.name
+}
+
 export const Letters: CollectionConfig = {
   slug: 'letters',
   fields: [
@@ -172,12 +202,16 @@ export const Letters: CollectionConfig = {
       required: true,
     },
     {
-      name: 'authorName',
+      name: 'name',
       type: 'text',
-      virtual: 'author.name',
+      access: {
+        create: () => false,
+        update: () => false,
+      },
       admin: {
         hidden: true,
       },
+      defaultValue: defaultName,
     },
     {
       name: 'images',
@@ -247,14 +281,14 @@ export const Letters: CollectionConfig = {
   access: {
     create: createAccess,
     read: readAccess,
-    update: readAccess,
+    update: updateAccess,
     delete: createAccess,
   },
   admin: {
     group: {
       es: 'Cartas',
     },
-    useAsTitle: 'authorName',
+    useAsTitle: 'name',
     hideAPIURL: true,
   },
   hooks: {
