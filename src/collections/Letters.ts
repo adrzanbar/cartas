@@ -212,6 +212,9 @@ export const Letters: CollectionConfig = {
         hidden: true,
       },
       defaultValue: defaultName,
+      label: {
+        es: 'Campaña: Autor',
+      },
     },
     {
       name: 'images',
