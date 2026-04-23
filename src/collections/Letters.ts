@@ -33,10 +33,10 @@ export const readAccess: Access<LetterImage> = ({ req: { user } }) => {
     or.push({ 'author.educationLevel': { not_equals: 'tertiary' } })
   }
   if (isScholarshipHolder(user)) {
-    or.push({ 'author.user.id': { equals: user.id } })
+    or.push({ 'author.user': { equals: user.id } })
   }
   if (isMediator(user)) {
-    or.push({ 'author.mediator.id': { equals: user.id } })
+    or.push({ 'author.mediator': { equals: user.id } })
   }
   if (or.length === 0) return false
   return { or }
@@ -56,7 +56,7 @@ const campaignFilter: FilterOptions<Letter> = () => ({
   sendAt: { greater_than: new Date().toISOString() },
 })
 
-const createDeliveries: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
+const syncDeliveries: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
   if (!doc.author) return
   const currentRecipients = (doc.recipients || []).map((recipient) => getId(recipient))
   if (doc.approved) {
@@ -142,34 +142,12 @@ const defaultAuthor: DefaultValue = async ({ user, req }) => {
 
 export const recipientsFilter: FilterOptions = async ({ data, req }) => {
   if (!data || !data.author) return { id: { in: [] } }
-  const { docs } = await req.payload.find({
+  const scholarshipHolder = await req.payload.findByID({
     collection: 'scholarship-holders',
-    where: { id: { equals: data.author } },
+    id: data.author,
     req,
   })
-  const sponsors = docs[0]?.sponsors ?? []
-  const sponsorIds = sponsors.map((sponsor) => (typeof sponsor === 'number' ? sponsor : sponsor.id))
-  return { id: { in: sponsorIds } }
-}
-
-const defaultName: DefaultValue = async ({ req }) => {
-  const { data } = req
-  if (!data) return
-
-  const campaign = await req.payload.findByID({
-    collection: 'campaigns',
-    id: getId(data.campaign),
-    req,
-    depth: 0,
-  })
-  const author = await req.payload.findByID({
-    collection: 'scholarship-holders',
-    id: getId(data.author),
-    req,
-    depth: 0,
-  })
-
-  return campaign.name + ': ' + author.name
+  return { id: { in: scholarshipHolder.sponsors?.map(getId) } }
 }
 
 export const Letters: CollectionConfig = {
@@ -200,21 +178,6 @@ export const Letters: CollectionConfig = {
       defaultValue: defaultAuthor,
       label: { es: 'Autor' },
       required: true,
-    },
-    {
-      name: 'name',
-      type: 'text',
-      access: {
-        create: () => false,
-        update: () => false,
-      },
-      admin: {
-        hidden: true,
-      },
-      defaultValue: defaultName,
-      label: {
-        es: 'Campaña: Autor',
-      },
     },
     {
       name: 'images',
@@ -288,15 +251,13 @@ export const Letters: CollectionConfig = {
     delete: createAccess,
   },
   admin: {
-    defaultColumns: ['campaign', 'author', 'recipients'],
     hideAPIURL: true,
     group: {
       es: 'Cartas',
     },
-    useAsTitle: 'name',
   },
   hooks: {
-    afterChange: [createDeliveries],
+    afterChange: [syncDeliveries],
   },
   labels: {
     singular: { es: 'Carta' },

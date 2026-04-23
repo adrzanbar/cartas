@@ -269,7 +269,6 @@ export interface Letter {
   id: number;
   campaign: number | Campaign;
   author?: (number | null) | ScholarshipHolder;
-  name?: string | null;
   images?:
     | {
         image: number | LetterImage;
@@ -626,7 +625,6 @@ export interface EmailTemplatesSelect<T extends boolean = true> {
 export interface LettersSelect<T extends boolean = true> {
   campaign?: T;
   author?: T;
-  name?: T;
   images?:
     | T
     | {
