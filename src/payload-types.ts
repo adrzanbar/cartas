@@ -273,6 +273,7 @@ export interface Letter {
     | null;
   recipients?: (number | Sponsor)[] | null;
   approved?: boolean | null;
+  sent?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -616,6 +617,7 @@ export interface LettersSelect<T extends boolean = true> {
       };
   recipients?: T;
   approved?: T;
+  sent?: T;
   updatedAt?: T;
   createdAt?: T;
 }

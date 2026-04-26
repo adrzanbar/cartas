@@ -137,8 +137,6 @@ const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
   operation,
 }) => {
   if (operation !== 'update') return doc
-  console.log('doc', doc)
-  console.log('previousDoc', previousDoc)
   if (doc.approved === previousDoc?.approved) return doc
 
   if (doc.approved) {
@@ -152,7 +150,7 @@ const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
     const currentRecipients = (doc.recipients || []).map(getId)
 
     if (currentRecipients.length > 0) {
-      const queuedJobs = await Promise.all(
+      await Promise.all(
         currentRecipients.map((recipientId) =>
           req.payload.jobs.queue({
             task: 'send-letter',
@@ -165,20 +163,63 @@ const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
           }),
         ),
       )
-      console.log('queuedJobs full result:', queuedJobs)
     }
   } else {
-    const cancelledJobs = await req.payload.jobs.cancel({
+    await req.payload.jobs.cancel({
       where: {
         taskSlug: { equals: 'send-letter' },
         'input.letter': { equals: doc.id },
       },
       req,
     })
-    console.log('cancelledJobs full result:', cancelledJobs)
   }
 
   return doc
+}
+
+const setSent: FieldHook<Letter, number[] | undefined> = async ({
+  req,
+  value,
+  originalDoc,
+  data,
+}) => {
+  if (!data) return value
+
+  const newRecipients = value || []
+  const oldRecipients = originalDoc?.recipients || []
+
+  if (newRecipients.length === 0) {
+    data.sent = false
+    return value
+  }
+
+  const hasChanged =
+    newRecipients.length !== oldRecipients.length ||
+    !newRecipients.every((recipient, i) => recipient === oldRecipients[i])
+
+  if (!hasChanged) {
+    return value
+  }
+
+  if (originalDoc?.id) {
+    const { totalDocs } = await req.payload.find({
+      collection: 'deliveries',
+      where: {
+        and: [
+          { letter: { equals: originalDoc.id } },
+          { recipient: { in: newRecipients } }, // Use newRecipients, not originalDoc.recipients
+        ],
+      },
+      req,
+      depth: 0,
+    })
+
+    data.sent = newRecipients.length > 0 && newRecipients.length <= totalDocs
+  } else {
+    data.sent = false
+  }
+
+  return value
 }
 
 export const Letters: CollectionConfig = {
@@ -240,6 +281,9 @@ export const Letters: CollectionConfig = {
       hasMany: true,
       filterOptions: recipientsFilter,
       label: { es: 'Destinatarios' },
+      hooks: {
+        beforeChange: [setSent],
+      },
     },
     {
       name: 'approved',
@@ -254,6 +298,17 @@ export const Letters: CollectionConfig = {
       },
       label: { es: 'Aprobada' },
       required: true,
+    },
+    {
+      name: 'sent',
+      type: 'checkbox',
+      access: {
+        create: () => false,
+        update: () => false,
+        read: ({ req: { user } }) => user && isAdmin(user),
+      },
+      admin: { readOnly: true },
+      label: { es: 'Enviada' },
     },
   ],
   access: {
