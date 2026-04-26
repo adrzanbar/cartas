@@ -76,6 +76,12 @@ export default buildConfig({
       if (!defaultJobsCollection.admin) defaultJobsCollection.admin = {}
       defaultJobsCollection.admin.hidden = ({ user }) => !user || !isAdmin(user)
       defaultJobsCollection.admin.group = 'System'
+      defaultJobsCollection.access = {
+        read: ({ req: { user } }) => user && isAdmin(user),
+        create: ({ req: { user } }) => user && isAdmin(user),
+        update: ({ req: { user } }) => user && isAdmin(user),
+        delete: ({ req: { user } }) => user && isAdmin(user),
+      }
       return defaultJobsCollection
     },
     tasks: [SendLetter],
