@@ -19,6 +19,13 @@ export const Deliveries: CollectionConfig = {
       required: true,
     },
     { name: 'sentAt', type: 'date', label: { es: 'Fecha de envío' } },
+    {
+      name: 'campaign',
+      type: 'relationship',
+      relationTo: 'campaigns',
+      label: { es: 'Campaña' },
+      virtual: 'letter.campaign',
+    },
   ],
   admin: {
     group: {
@@ -28,7 +35,7 @@ export const Deliveries: CollectionConfig = {
   },
   access: {
     create: () => false,
-    read: ({ req: { user } }) => (user ? isAdmin(user) : false),
+    read: ({ req: { user } }) => user && isAdmin(user),
     update: () => false,
     delete: () => false,
   },

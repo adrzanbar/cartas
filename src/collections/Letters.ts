@@ -1,6 +1,5 @@
 import {
   type Access,
-  type CollectionAfterChangeHook,
   type CollectionConfig,
   type DefaultValue,
   type FieldHook,
@@ -8,6 +7,7 @@ import {
   type Where,
   type CollectionBeforeChangeHook,
   APIError,
+  CollectionAfterChangeHook,
 } from 'payload'
 import { Letter, LetterImage } from '@/payload-types'
 import { isAdmin, isReviewer, isScholarshipHolder, isMediator, isTertiaryReviewer } from './Users'
@@ -46,68 +46,15 @@ export const readAccess: Access<LetterImage> = ({ req: { user } }) => {
 
 const updateAccess: Access<LetterImage> = async ({ req }) => {
   const read = await readAccess({ req })
-
   if (typeof read === 'boolean') return read
-
-  const or = [...(read.or || []), { 'campaign.sendAt': { greater_than: new Date().toISOString() } }]
-
-  return { or }
+  return {
+    and: [read, { 'campaign.sendAt': { greater_than: new Date().toISOString() } }],
+  }
 }
 
 const campaignFilter: FilterOptions<Letter> = () => ({
   sendAt: { greater_than: new Date().toISOString() },
 })
-
-const syncDeliveries: CollectionAfterChangeHook<Letter> = async ({ doc, req }) => {
-  if (!doc.author) return
-  const currentRecipients = (doc.recipients || []).map((recipient) => getId(recipient))
-  if (doc.approved) {
-    const { docs: existingDeliveries } = await req.payload.find({
-      collection: 'deliveries',
-      depth: 0,
-      pagination: false,
-      req,
-      where: { letter: { equals: doc.id } },
-    })
-    const existingRecipientIds = existingDeliveries.map((delivery) => getId(delivery.recipient))
-    const recipientsToCreate = currentRecipients.filter((id) => !existingRecipientIds.includes(id))
-    const deliveryIdsToDelete = existingDeliveries
-      .filter((delivery) => !currentRecipients.includes(getId(delivery.recipient)))
-      .map((delivery) => delivery.id)
-    if (recipientsToCreate.length > 0) {
-      await Promise.all(
-        recipientsToCreate.map((recipientId) =>
-          req.payload.create({
-            collection: 'deliveries',
-            req,
-            data: {
-              letter: doc.id,
-              recipient: recipientId,
-            },
-          }),
-        ),
-      )
-    }
-    if (deliveryIdsToDelete.length > 0) {
-      await req.payload.delete({
-        collection: 'deliveries',
-        req,
-        where: {
-          id: { in: deliveryIdsToDelete },
-        },
-      })
-    }
-  } else {
-    await req.payload.delete({
-      collection: 'deliveries',
-      req,
-      where: {
-        letter: { equals: doc.id },
-      },
-    })
-  }
-  return doc
-}
 
 const setLetterImageAuthor: FieldHook<Letter, number | LetterImage | null | undefined> = async ({
   req,
@@ -183,6 +130,57 @@ const ensureUniqueCampaignAuthorRecipient: CollectionBeforeChangeHook<Letter> = 
   return data
 }
 
+const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
+  doc,
+  previousDoc,
+  req,
+  operation,
+}) => {
+  if (operation !== 'update') return doc
+  console.log('doc', doc)
+  console.log('previousDoc', previousDoc)
+  if (doc.approved === previousDoc?.approved) return doc
+
+  if (doc.approved) {
+    const campaign = await req.payload.findByID({
+      collection: 'campaigns',
+      id: doc.campaign as number,
+      req,
+      depth: 0,
+    })
+
+    const currentRecipients = (doc.recipients || []).map(getId)
+
+    if (currentRecipients.length > 0) {
+      const queuedJobs = await Promise.all(
+        currentRecipients.map((recipientId) =>
+          req.payload.jobs.queue({
+            task: 'send-letter',
+            waitUntil: new Date(campaign.sendAt),
+            input: {
+              letter: doc.id,
+              recipient: recipientId,
+            },
+            req,
+          }),
+        ),
+      )
+      console.log('queuedJobs full result:', queuedJobs)
+    }
+  } else {
+    const cancelledJobs = await req.payload.jobs.cancel({
+      where: {
+        taskSlug: { equals: 'send-letter' },
+        'input.letter': { equals: doc.id },
+      },
+      req,
+    })
+    console.log('cancelledJobs full result:', cancelledJobs)
+  }
+
+  return doc
+}
+
 export const Letters: CollectionConfig = {
   slug: 'letters',
   fields: [
@@ -215,21 +213,21 @@ export const Letters: CollectionConfig = {
     {
       name: 'images',
       type: 'array',
-      access: {
-        update: ({ doc }) => !doc?.approved,
-      },
       fields: [
         {
           name: 'image',
           type: 'upload',
+          relationTo: 'letter-images',
           hooks: {
             beforeChange: [setLetterImageAuthor],
           },
           label: { es: 'Imagen' },
-          relationTo: 'letter-images',
           required: true,
         },
       ],
+      access: {
+        update: ({ doc }) => doc && !doc.approved,
+      },
       label: { es: 'Imágenes' },
     },
     {
@@ -237,7 +235,7 @@ export const Letters: CollectionConfig = {
       type: 'relationship',
       relationTo: 'sponsors',
       access: {
-        update: ({ doc }) => !doc?.approved,
+        update: ({ doc }) => doc && !doc.approved,
       },
       hasMany: true,
       filterOptions: recipientsFilter,
@@ -247,34 +245,15 @@ export const Letters: CollectionConfig = {
       name: 'approved',
       type: 'checkbox',
       access: {
-        create: ({ req: { user } }) => (user ? isAdmin(user) || isReviewer(user) : false),
-        update: ({ req: { user } }) => (user ? isAdmin(user) || isReviewer(user) : false),
+        create: ({ req: { user } }) => false,
+        update: ({ req: { user } }) => user && (isAdmin(user) || isReviewer(user)),
       },
       admin: {
-        condition: (data, siblingData, { user, operation }) => {
-          if (!user) return false
-          if (isScholarshipHolder(user)) return false
-          return operation !== 'create'
-        },
+        condition: (data, siblingData, { user }) =>
+          user && (isAdmin(user) || isReviewer(user) || isMediator(user)),
       },
       label: { es: 'Aprobada' },
       required: true,
-    },
-    {
-      name: 'note',
-      type: 'textarea',
-      access: {
-        create: ({ req: { user } }) => (user ? isAdmin(user) || isReviewer(user) : false),
-        update: ({ req: { user } }) => (user ? isAdmin(user) || isReviewer(user) : false),
-      },
-      admin: {
-        condition: (data, siblingData, { user, operation }) => {
-          if (!user) return false
-          if (isScholarshipHolder(user)) return false
-          return operation !== 'create'
-        },
-      },
-      label: { es: 'Nota del revisor' },
     },
   ],
   access: {
@@ -291,7 +270,7 @@ export const Letters: CollectionConfig = {
   },
   hooks: {
     beforeChange: [ensureUniqueCampaignAuthorRecipient],
-    afterChange: [syncDeliveries],
+    afterChange: [enqueueTask],
   },
   labels: {
     singular: { es: 'Carta' },

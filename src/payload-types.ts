@@ -103,12 +103,8 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {
-    'payload-jobs-stats': PayloadJobsStat;
-  };
-  globalsSelect: {
-    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
-  };
+  globals: {};
+  globalsSelect: {};
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -116,7 +112,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      SendDueLetters: TaskSendDueLetters;
+      'send-letter': TaskSendLetter;
       inline: {
         input: unknown;
         output: unknown;
@@ -277,7 +273,6 @@ export interface Letter {
     | null;
   recipients?: (number | Sponsor)[] | null;
   approved?: boolean | null;
-  note?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -310,6 +305,7 @@ export interface Delivery {
   letter: number | Letter;
   recipient: number | Sponsor;
   sentAt?: string | null;
+  campaign?: (number | null) | Campaign;
   updatedAt: string;
   createdAt: string;
 }
@@ -382,7 +378,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'SendDueLetters';
+        taskSlug: 'inline' | 'send-letter';
         taskID: string;
         input?:
           | {
@@ -412,26 +408,13 @@ export interface PayloadJob {
           | number
           | boolean
           | null;
-        parent?: {
-          taskSlug?: ('inline' | 'SendDueLetters') | null;
-          taskID?: string | null;
-        };
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'SendDueLetters') | null;
+  taskSlug?: ('inline' | 'send-letter') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
-  meta?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -633,7 +616,6 @@ export interface LettersSelect<T extends boolean = true> {
       };
   recipients?: T;
   approved?: T;
-  note?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -664,6 +646,7 @@ export interface DeliveriesSelect<T extends boolean = true> {
   letter?: T;
   recipient?: T;
   sentAt?: T;
+  campaign?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -697,19 +680,12 @@ export interface PayloadJobsSelect<T extends boolean = true> {
         output?: T;
         state?: T;
         error?: T;
-        parent?:
-          | T
-          | {
-              taskSlug?: T;
-              taskID?: T;
-            };
         id?: T;
       };
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
   processing?: T;
-  meta?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -747,34 +723,6 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs-stats".
- */
-export interface PayloadJobsStat {
-  id: number;
-  stats?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  updatedAt?: string | null;
-  createdAt?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payload-jobs-stats_select".
- */
-export interface PayloadJobsStatsSelect<T extends boolean = true> {
-  stats?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  globalType?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -785,13 +733,15 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskSendDueLetters".
+ * via the `definition` "TaskSend-letter".
  */
-export interface TaskSendDueLetters {
-  input?: unknown;
+export interface TaskSendLetter {
+  input: {
+    letter: number | Letter;
+    recipient: number | Sponsor;
+  };
   output: {
-    sent: number;
-    failed: number;
+    success?: boolean | null;
   };
 }
 /**
