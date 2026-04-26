@@ -89,7 +89,7 @@ export default buildConfig({
       {
         cron: '* * * * *',
         queue: 'default',
-        limit: 10,
+        limit: 1,
       },
     ],
   },
