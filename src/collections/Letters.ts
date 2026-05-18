@@ -177,51 +177,6 @@ const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
   return doc
 }
 
-const setSent: FieldHook<Letter, number[] | undefined> = async ({
-  req,
-  value,
-  originalDoc,
-  data,
-}) => {
-  if (!data) return value
-
-  const newRecipients = value || []
-  const oldRecipients = originalDoc?.recipients || []
-
-  if (newRecipients.length === 0) {
-    data.sent = false
-    return value
-  }
-
-  const hasChanged =
-    newRecipients.length !== oldRecipients.length ||
-    !newRecipients.every((recipient, i) => recipient === oldRecipients[i])
-
-  if (!hasChanged) {
-    return value
-  }
-
-  if (originalDoc?.id) {
-    const { totalDocs } = await req.payload.find({
-      collection: 'deliveries',
-      where: {
-        and: [
-          { letter: { equals: originalDoc.id } },
-          { recipient: { in: newRecipients } }, // Use newRecipients, not originalDoc.recipients
-        ],
-      },
-      req,
-      depth: 0,
-    })
-
-    data.sent = newRecipients.length > 0 && newRecipients.length <= totalDocs
-  } else {
-    data.sent = false
-  }
-
-  return value
-}
-
 export const Letters: CollectionConfig = {
   slug: 'letters',
   fields: [
@@ -281,9 +236,6 @@ export const Letters: CollectionConfig = {
       hasMany: true,
       filterOptions: recipientsFilter,
       label: { es: 'Destinatarios' },
-      hooks: {
-        beforeChange: [setSent],
-      },
     },
     {
       name: 'approved',
