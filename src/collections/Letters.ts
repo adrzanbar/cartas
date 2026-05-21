@@ -190,6 +190,7 @@ export const Letters: CollectionConfig = {
       filterOptions: campaignFilter,
       label: { es: 'Campaña' },
       required: true,
+      admin: { position: 'sidebar' },
     },
     {
       name: 'author',
@@ -201,9 +202,23 @@ export const Letters: CollectionConfig = {
       },
       admin: {
         condition: (data, siblingData, { user }) => (user ? !isScholarshipHolder(user) : false),
+        position: 'sidebar',
       },
       defaultValue: defaultAuthor,
       label: { es: 'Autor' },
+      required: true,
+    },
+    {
+      name: 'recipients',
+      type: 'relationship',
+      relationTo: 'sponsors',
+      access: {
+        update: ({ doc }) => doc && !doc.approved,
+      },
+      hasMany: true,
+      filterOptions: recipientsFilter,
+      label: { es: 'Destinatarios' },
+      minRows: 1,
       required: true,
     },
     {
@@ -227,40 +242,49 @@ export const Letters: CollectionConfig = {
       label: { es: 'Imágenes' },
     },
     {
-      name: 'recipients',
+      type: 'row',
+      admin: { position: 'sidebar' },
+      fields: [
+        {
+          name: 'approved',
+          type: 'checkbox',
+          access: {
+            create: ({ req: { user } }) => false,
+            update: ({ req: { user } }) => user && (isAdmin(user) || isReviewer(user)),
+          },
+          admin: {
+            condition: (data, siblingData, { user }) =>
+              user && (isAdmin(user) || isReviewer(user) || isMediator(user)),
+            width: '50%',
+          },
+          label: { es: 'Aprobada' },
+          required: true,
+          defaultValue: false,
+        },
+        {
+          name: 'sent',
+          type: 'checkbox',
+          access: {
+            create: () => false,
+            update: () => false,
+            read: ({ req: { user } }) => user && isAdmin(user),
+          },
+          admin: { readOnly: true, width: '50%' },
+          label: { es: 'Enviada' },
+          required: true,
+          defaultValue: false,
+        },
+      ],
+    },
+    {
+      name: 'mediator',
       type: 'relationship',
-      relationTo: 'sponsors',
-      access: {
-        update: ({ doc }) => doc && !doc.approved,
-      },
-      hasMany: true,
-      filterOptions: recipientsFilter,
-      label: { es: 'Destinatarios' },
-    },
-    {
-      name: 'approved',
-      type: 'checkbox',
-      access: {
-        create: ({ req: { user } }) => false,
-        update: ({ req: { user } }) => user && (isAdmin(user) || isReviewer(user)),
-      },
+      relationTo: 'users',
+      virtual: 'author.mediator',
+      label: { es: 'Mediador' },
       admin: {
-        condition: (data, siblingData, { user }) =>
-          user && (isAdmin(user) || isReviewer(user) || isMediator(user)),
+        condition: () => false,
       },
-      label: { es: 'Aprobada' },
-      required: true,
-    },
-    {
-      name: 'sent',
-      type: 'checkbox',
-      access: {
-        create: () => false,
-        update: () => false,
-        read: ({ req: { user } }) => user && isAdmin(user),
-      },
-      admin: { readOnly: true },
-      label: { es: 'Enviada' },
     },
   ],
   access: {

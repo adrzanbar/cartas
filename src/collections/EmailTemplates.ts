@@ -9,6 +9,7 @@ export const EmailTemplates: CollectionConfig = {
       type: 'text',
       label: { es: 'Nombre' },
       required: true,
+      admin: { position: 'sidebar' },
     },
     {
       name: 'template',

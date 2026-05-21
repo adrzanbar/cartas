@@ -138,6 +138,7 @@ export const ScholarshipHolders: CollectionConfig = {
       relationTo: 'users',
       filterOptions: () => ({ roles: { contains: 'scholarshipHolder' } }),
       label: { es: 'Usuario' },
+      admin: { position: 'sidebar' },
     },
   ],
   access: {

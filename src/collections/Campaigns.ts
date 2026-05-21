@@ -14,6 +14,9 @@ export const Campaigns: CollectionConfig = {
       label: { es: 'Nombre' },
       minLength: 1,
       required: true,
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'subject',
@@ -30,6 +33,7 @@ export const Campaigns: CollectionConfig = {
           pickerAppearance: 'dayAndTime',
           displayFormat: "d 'de' MMMM yyyy, h:mm aa",
         },
+        position: 'sidebar',
       },
       label: { es: 'Enviar el' },
       required: true,

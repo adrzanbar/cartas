@@ -4,10 +4,9 @@ import type { ClientUser, CollectionConfig } from 'payload'
 export const isAdmin = (user: User | ClientUser) => user?.roles?.includes('admin') ?? false
 
 export const isReviewer = (user: User) =>
-  (['reviewer', 'tertiary-reviewer'] as const).some((role) => user.roles.includes(role))
+  (['reviewer', 'tertiaryReviewer'] as const).some((role) => user.roles.includes(role))
 
-export const isTertiaryReviewer = (user: User) =>
-  user?.roles?.includes('tertiary-reviewer') ?? false
+export const isTertiaryReviewer = (user: User) => user?.roles?.includes('tertiaryReviewer') ?? false
 
 export const isMediator = (user: User) => user?.roles?.includes('mediator') ?? false
 
@@ -25,6 +24,7 @@ export const Users: CollectionConfig = {
       },
       label: { es: 'Nombre' },
       required: true,
+      admin: { position: 'sidebar' },
     },
     {
       name: 'username',
@@ -46,11 +46,33 @@ export const Users: CollectionConfig = {
       required: true,
       options: [
         { label: { es: 'Administrador' }, value: 'admin' },
-        { label: { es: 'Revisor de terciarios' }, value: 'tertiary-reviewer' },
+        { label: { es: 'Revisor de terciarios' }, value: 'tertiaryReviewer' },
         { label: { es: 'Revisor' }, value: 'reviewer' },
         { label: { es: 'Mediador' }, value: 'mediator' },
         { label: { es: 'Becario' }, value: 'scholarshipHolder' },
       ],
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'scholarshipHolders',
+      type: 'join',
+      collection: 'scholarship-holders',
+      on: 'mediator',
+      label: { es: 'Becarios' },
+      admin: {
+        condition: ({ roles }) => roles.includes('mediator'),
+      },
+    },
+    {
+      name: 'scholarshipHolder',
+      type: 'join',
+      collection: 'scholarship-holders',
+      on: 'user',
+      label: { es: 'Becario' },
+      admin: {
+        condition: ({ roles }) => roles.includes('scholarshipHolder'),
+        allowCreate: false,
+      },
     },
   ],
   access: {

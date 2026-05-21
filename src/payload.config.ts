@@ -87,9 +87,9 @@ export default buildConfig({
     tasks: [SendLetter],
     autoRun: [
       {
-        cron: '* * * * *',
+        cron: '* 6-21 * * *',
         queue: 'default',
-        limit: 1,
+        limit: 2,
       },
     ],
   },
