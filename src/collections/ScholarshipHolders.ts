@@ -28,13 +28,14 @@ const normalize = (str: string) => str.toLowerCase().replaceAll(' ', '')
 const createUser: CollectionBeforeChangeHook<ScholarshipHolder> = async ({
   data,
   operation,
-  req: { payload },
+  req,
 }) => {
   if (operation !== 'create') return data
   if (data.educationLevel !== 'tertiary') return data
   if (!data.nationalId || !data.name) return data
-  const user = await payload.create({
+  const user = await req.payload.create({
     collection: 'users',
+    req,
     data: {
       name: data.name,
       username: normalize(data.nationalId),
@@ -50,22 +51,23 @@ const updateUser: CollectionAfterChangeHook<ScholarshipHolder> = async ({
   doc,
   previousDoc,
   operation,
-  req: { payload },
+  req,
 }) => {
   if (operation === 'update' && doc.user) {
     if (doc.nationalId !== previousDoc.nationalId) {
       const userId = typeof doc.user === 'object' ? doc.user.id : doc.user
       try {
-        await payload.update({
+        await req.payload.update({
           collection: 'users',
           id: userId,
+          req,
           data: {
             username: normalize(doc.nationalId),
           },
         })
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : String(error)
-        payload.logger.error(`Could not update linked user ${userId}: ${errorMessage}`)
+        req.payload.logger.error(`Could not update linked user ${userId}: ${errorMessage}`)
       }
     }
   }
@@ -74,18 +76,19 @@ const updateUser: CollectionAfterChangeHook<ScholarshipHolder> = async ({
 
 const deleteUser: CollectionAfterDeleteHook<ScholarshipHolder> = async ({
   doc,
-  req: { payload },
+  req,
 }) => {
   if (doc.user) {
     const userId = typeof doc.user === 'object' ? doc.user.id : doc.user
     try {
-      await payload.delete({
+      await req.payload.delete({
         collection: 'users',
         id: userId,
+        req,
       })
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
-      payload.logger.error(`Could not delete linked user ${userId}: ${errorMessage}`)
+      req.payload.logger.error(`Could not delete linked user ${userId}: ${errorMessage}`)
     }
   }
   return doc
