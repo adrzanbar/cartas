@@ -299,6 +299,116 @@ Resolves relationship data automatically via dot notation:
 - Appears in API responses like any other field
 - No DB column is created
 
+## Jobs Queue
+
+Payload's jobs queue has four concepts: **tasks**, **workflows**, **jobs**, **queues**.
+
+### Tasks
+
+A task is a function with typed input/output schema, defined in `jobs.tasks[]`. Tasks can auto-retry on failure.
+
+```typescript
+{
+  slug: 'processPayment',
+  retries: 3,
+  inputSchema: [{ name: 'orderId', type: 'text', required: true }],
+  outputSchema: [{ name: 'success', type: 'checkbox' }],
+  handler: async ({ input, req }) => { /* ... */ },
+}
+```
+
+Cancel a job without retry: `throw new JobCancelledError('reason')`.
+
+### Task Schedules
+
+Tasks can auto-enqueue themselves on a cron via the `schedule` property:
+
+```typescript
+{
+  slug: 'dailyDigest',
+  schedule: [{ cron: '0 8 * * *', queue: 'daily' }],
+  handler: async ({ req }) => { /* ... */ },
+}
+```
+
+Cron patterns: `*/30 * * * *` (30 min), `* * * * *` (minute), `0 * * * *` (hourly).
+
+### Queues & Execution
+
+Jobs are stored in the `payload-jobs` collection. Queuing and running are separate:
+
+- **Queue a job**: `payload.jobs.queue({ task: '...', input: {...}, queue: '...', waitUntil: new Date(...) })`
+- **Run jobs**: Three options — bin script (`pnpm payload jobs:run`), `autoRun` config, or `/api/payload-jobs/run` endpoint
+
+**`autoRun`** config (dedicated servers only):
+```typescript
+autoRun: [
+  { cron: '* * * * *', queue: 'delivery', limit: 1 },
+]
+```
+- `autoRun` is dual-purpose: it both calls `handleSchedules` (enqueues scheduled tasks) AND runs queued jobs
+- Set `disableScheduling: true` if you only want running (not schedule handling)
+- Queue name must match between `schedule.queue` and `autoRun.queue`
+- `limit` controls max concurrent tasks
+
+### Job Options
+
+```typescript
+await payload.jobs.queue({
+  task: 'sendEmail',
+  input: { userId: '123' },
+  waitUntil: new Date('2024-12-25T00:00:00Z'),  // future scheduling
+  queue: 'high-priority',
+  log: [{ message: 'Queued by admin', createdAt: new Date().toISOString() }],
+  req,
+})
+```
+
+### Cancelling Jobs
+
+```typescript
+await payload.jobs.cancelByID({ id: jobId })
+await payload.jobs.cancel({ where: { taskSlug: { equals: 'send-letter' } } })
+```
+
+### Concurrency Control
+
+Prevent parallel execution of jobs on the same resource. Requires `enableConcurrencyControl: true`:
+
+```typescript
+{
+  slug: 'syncDocument',
+  concurrency: ({ input }) => `sync:${input.documentId}`,
+  handler: async ({ input }) => { /* runs exclusively */ },
+}
+```
+
+Options: `key` function, `exclusive` (default true), `supersedes` (delete older pending jobs).
+
+### Workflows
+
+Group multiple tasks with graceful retry-from-failure. Tasks that already succeeded return cached output on retry.
+
+```typescript
+{
+  slug: 'createPostAndUpdate',
+  handler: async ({ job, tasks }) => {
+    const output = await tasks.createPost('1', { input: { title: job.input.title } })
+    await tasks.updatePost('2', { input: { postId: output.output.postID } })
+  },
+}
+```
+
+- Use `inlineTask('id', { task: async ({ req }) => {...} })` for one-off tasks
+- Keep task IDs descriptive and stable across retries
+- Pass IDs, not full objects
+
+### Key Patterns
+
+- **Feature-based queues**: Separate queues per domain (`emails`, `images`, `analytics`) with different cron intervals
+- **Priority queues**: `critical` (every minute), `default` (every 5 min), `batch` (nightly)
+- **Self-re-enqueuing**: A task can queue another instance of itself at the end of its handler
+
 ## Critical Payload Gotchas
 
 1. **`overrideAccess: false`** — When passing `user` to Local API, ALWAYS set this. Without it, the operation runs with admin privileges regardless of the user.
