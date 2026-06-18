@@ -53,27 +53,6 @@ export const Users: CollectionConfig = {
       ],
       admin: { position: 'sidebar' },
     },
-    {
-      name: 'scholarshipHolders',
-      type: 'join',
-      collection: 'scholarship-holders',
-      on: 'mediator',
-      label: { es: 'Becarios' },
-      admin: {
-        condition: ({ roles }) => roles.includes('mediator'),
-      },
-    },
-    {
-      name: 'scholarshipHolder',
-      type: 'join',
-      collection: 'scholarship-holders',
-      on: 'user',
-      label: { es: 'Becario' },
-      admin: {
-        condition: ({ roles }) => roles.includes('scholarshipHolder'),
-        allowCreate: false,
-      },
-    },
   ],
   access: {
     create: ({ req: { user } }) => (user ? isAdmin(user) : false),

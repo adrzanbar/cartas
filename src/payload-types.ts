@@ -82,15 +82,7 @@ export interface Config {
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
-  collectionsJoins: {
-    users: {
-      scholarshipHolders: 'scholarship-holders';
-      scholarshipHolder: 'scholarship-holders';
-    };
-    sponsors: {
-      scholarshipHolders: 'scholarship-holders';
-    };
-  };
+  collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -167,16 +159,6 @@ export interface User {
   id: number;
   name: string;
   roles: ('admin' | 'tertiaryReviewer' | 'reviewer' | 'mediator' | 'scholarshipHolder')[];
-  scholarshipHolders?: {
-    docs?: (number | ScholarshipHolder)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
-  scholarshipHolder?: {
-    docs?: (number | ScholarshipHolder)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   updatedAt: string;
   createdAt: string;
   email?: string | null;
@@ -196,6 +178,25 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -221,32 +222,8 @@ export interface Sponsor {
   name: string;
   organizationName?: string | null;
   email?: string | null;
-  scholarshipHolders?: {
-    docs?: (number | ScholarshipHolder)[];
-    hasNextPage?: boolean;
-    totalDocs?: number;
-  };
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "media".
- */
-export interface Media {
-  id: number;
-  alt: string;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -535,8 +512,6 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   roles?: T;
-  scholarshipHolders?: T;
-  scholarshipHolder?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -595,7 +570,6 @@ export interface SponsorsSelect<T extends boolean = true> {
   name?: T;
   organizationName?: T;
   email?: T;
-  scholarshipHolders?: T;
   updatedAt?: T;
   createdAt?: T;
 }

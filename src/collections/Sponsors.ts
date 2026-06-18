@@ -22,13 +22,6 @@ export const Sponsors: CollectionConfig = {
       label: { es: 'Correo electrónico' },
       unique: true,
     },
-    {
-      name: 'scholarshipHolders',
-      type: 'join',
-      collection: 'scholarship-holders',
-      on: 'sponsors',
-      label: { es: 'Becarios' },
-    },
   ],
   access: {
     create: ({ req: { user } }) => (user ? isAdmin(user) : false),
