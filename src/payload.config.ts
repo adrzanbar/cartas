@@ -15,7 +15,7 @@ import { es } from '@payloadcms/translations/languages/es'
 import { EmailTemplates } from './collections/EmailTemplates'
 import { migrations } from './migrations'
 import { httpOAuthAdapter } from './adapters/email-http-oauth'
-import { SendLetter } from './tasks/send-letter'
+import { SendPendingDeliveries } from './tasks/send-pending-deliveries'
 import { Deliveries } from './collections/Deliveries'
 
 export default buildConfig({
@@ -84,12 +84,12 @@ export default buildConfig({
       }
       return defaultJobsCollection
     },
-    tasks: [SendLetter],
+    tasks: [SendPendingDeliveries],
     autoRun: [
       {
-        cron: '* 6-21 * * *',
-        queue: 'default',
-        limit: 2,
+        cron: '* * * * *',
+        queue: 'delivery',
+        limit: 1,
       },
     ],
   },

@@ -85,7 +85,7 @@ const defaultAuthor: DefaultValue = async ({ user, req }) => {
       req,
       where: { user: { equals: user.id } },
     })
-    return docs[0].id
+    return docs[0]?.id
   }
 }
 
@@ -130,6 +130,27 @@ const ensureUniqueCampaignAuthorRecipient: CollectionBeforeChangeHook<Letter> = 
   return data
 }
 
+const computeSent: FieldHook<Letter, boolean, Letter> = async ({ data: letter, req }) => {
+  if (!letter?.id) return false
+  const recipients = (letter.recipients || []).map(getId)
+  if (recipients.length === 0) return false
+  const { totalDocs } = await req.payload.find({
+    req,
+    overrideAccess: true,
+    collection: 'deliveries',
+    where: {
+      and: [
+        { letter: { equals: letter.id } },
+        { sentAt: { exists: true } },
+        { recipient: { in: recipients } },
+      ],
+    },
+    depth: 0,
+    pagination: false,
+  })
+  return totalDocs >= recipients.length
+}
+
 const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
   doc,
   previousDoc,
@@ -139,39 +160,39 @@ const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
   if (operation !== 'update') return doc
   if (doc.approved === previousDoc?.approved) return doc
 
+  const currentRecipients = (doc.recipients || []).map(getId)
+
   if (doc.approved) {
-    const campaign = await req.payload.findByID({
-      collection: 'campaigns',
-      id: doc.campaign as number,
-      req,
-      depth: 0,
-    })
-
-    const currentRecipients = (doc.recipients || []).map(getId)
-
-    if (currentRecipients.length > 0) {
-      await Promise.all(
-        currentRecipients.map((recipientId) =>
-          req.payload.jobs.queue({
-            task: 'send-letter',
-            waitUntil: new Date(campaign.sendAt),
-            input: {
-              letter: doc.id,
-              recipient: recipientId,
-            },
-            req,
-          }),
-        ),
-      )
+    for (const recipientId of currentRecipients) {
+      await req.payload.create({
+        collection: 'deliveries',
+        data: { letter: doc.id, recipient: recipientId },
+        req,
+        overrideAccess: true,
+      })
     }
   } else {
-    await req.payload.jobs.cancel({
+    const { docs: unsent } = await req.payload.find({
+      collection: 'deliveries',
       where: {
-        taskSlug: { equals: 'send-letter' },
-        'input.letter': { equals: doc.id },
+        and: [
+          { letter: { equals: doc.id } },
+          { sentAt: { exists: false } },
+        ],
       },
+      depth: 0,
+      pagination: false,
       req,
+      overrideAccess: true,
     })
+    for (const delivery of unsent) {
+      await req.payload.delete({
+        collection: 'deliveries',
+        id: delivery.id,
+        req,
+        overrideAccess: true,
+      })
+    }
   }
 
   return doc
@@ -201,7 +222,8 @@ export const Letters: CollectionConfig = {
         update: () => false,
       },
       admin: {
-        condition: (data, siblingData, { user }) => (user ? !isScholarshipHolder(user) : false),
+        condition: (data, siblingData, { user }) =>
+          user ? !isScholarshipHolder(user) || isAdmin(user) : false,
         position: 'sidebar',
       },
       defaultValue: defaultAuthor,
@@ -264,15 +286,12 @@ export const Letters: CollectionConfig = {
         {
           name: 'sent',
           type: 'checkbox',
-          access: {
-            create: () => false,
-            update: () => false,
-            read: ({ req: { user } }) => user && isAdmin(user),
+          virtual: true,
+          hooks: {
+            afterRead: [computeSent],
           },
           admin: { readOnly: true, width: '50%' },
           label: { es: 'Enviada' },
-          required: true,
-          defaultValue: false,
         },
       ],
     },

@@ -103,8 +103,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'payload-jobs-stats': PayloadJobsStat;
+  };
+  globalsSelect: {
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -112,7 +116,7 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
-      'send-letter': TaskSendLetter;
+      'send-pending-deliveries': TaskSendPendingDeliveries;
       inline: {
         input: unknown;
         output: unknown;
@@ -273,7 +277,7 @@ export interface Letter {
       }[]
     | null;
   approved?: boolean | null;
-  sent: boolean;
+  sent?: boolean | null;
   mediator?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -380,7 +384,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'send-letter';
+        taskSlug: 'inline' | 'send-pending-deliveries';
         taskID: string;
         input?:
           | {
@@ -413,10 +417,19 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'send-letter') | null;
+  taskSlug?: ('inline' | 'send-pending-deliveries') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -690,6 +703,7 @@ export interface PayloadJobsSelect<T extends boolean = true> {
   queue?: T;
   waitUntil?: T;
   processing?: T;
+  meta?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -727,6 +741,34 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: number;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -737,16 +779,11 @@ export interface CollectionsWidget {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "TaskSend-letter".
+ * via the `definition` "TaskSend-pending-deliveries".
  */
-export interface TaskSendLetter {
-  input: {
-    letter: number | Letter;
-    recipient: number | Sponsor;
-  };
-  output: {
-    success?: boolean | null;
-  };
+export interface TaskSendPendingDeliveries {
+  input?: unknown;
+  output?: unknown;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

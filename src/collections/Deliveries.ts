@@ -1,43 +1,5 @@
-import { CollectionAfterChangeHook, CollectionConfig } from 'payload'
+import { CollectionConfig } from 'payload'
 import { isAdmin } from './Users'
-import { getId } from '@/utils'
-
-const checkAndSetLetterSent: CollectionAfterChangeHook = async ({ doc, req, operation }) => {
-  if (operation !== 'create') return doc
-
-  const letterId = getId(doc.letter)
-
-  const letter = await req.payload.findByID({
-    req,
-    collection: 'letters',
-    id: letterId,
-  })
-
-  const recipients = (letter.recipients || []).map(getId)
-
-  if (recipients.length === 0) return doc
-
-  const { totalDocs } = await req.payload.find({
-    req,
-    collection: 'deliveries',
-    where: {
-      letter: { equals: letterId },
-      recipient: { in: recipients },
-    },
-  })
-
-  if (totalDocs >= recipients.length && !letter.sent) {
-    await req.payload.update({
-      req,
-      overrideAccess: true,
-      collection: 'letters',
-      id: letterId,
-      data: { sent: true },
-    })
-  }
-
-  return doc
-}
 
 export const Deliveries: CollectionConfig = {
   slug: 'deliveries',
@@ -72,13 +34,10 @@ export const Deliveries: CollectionConfig = {
     hideAPIURL: true,
   },
   access: {
-    create: () => false,
+    create: ({ req: { user } }) => user && isAdmin(user),
     read: ({ req: { user } }) => user && isAdmin(user),
-    update: () => false,
-    delete: () => false,
-  },
-  hooks: {
-    afterChange: [checkAndSetLetterSent],
+    update: ({ req: { user } }) => user && isAdmin(user),
+    delete: ({ req: { user } }) => user && isAdmin(user),
   },
   labels: {
     singular: { es: 'Entrega' },

@@ -31,6 +31,7 @@ const createUser: CollectionBeforeChangeHook<ScholarshipHolder> = async ({
   req,
 }) => {
   if (operation !== 'create') return data
+  if (data.user) return data
   if (data.educationLevel !== 'tertiary') return data
   if (!data.nationalId || !data.name) return data
   const user = await req.payload.create({
