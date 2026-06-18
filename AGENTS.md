@@ -261,6 +261,44 @@ Use Payload CSS vars (`var(--theme-elevation-500)`, `var(--theme-text)`, etc.) o
 - **Letter images** stored on disk under `letter-images/` (not in DB directly).
 - **No CI/GitHub Actions** configured.
 
+## Virtual Fields
+
+Any field type can be made virtual (`virtual: true` or `virtual: 'path'`) — value is computed at read time, not stored in DB.
+
+### Boolean mode (`virtual: true`)
+
+Use `afterRead` hooks to compute the value:
+
+```typescript
+{
+  name: 'fullName',
+  type: 'text',
+  virtual: true,
+  hooks: {
+    afterRead: [({ siblingData }) => `${siblingData.firstName} ${siblingData.lastName}`],
+  },
+}
+```
+
+### String path mode (`virtual: 'relatedField.path'`)
+
+Resolves relationship data automatically via dot notation:
+
+```typescript
+{
+  name: 'authorName',
+  type: 'text',
+  virtual: 'author.name',      // resolves to name of the related user
+}
+{ name: 'categoryTitles', type: 'text', virtual: 'categories.title' }  // hasMany → array
+```
+
+**Requirements:**
+- The source relationship field (e.g. `author`) must exist in the same collection
+- `hasMany` relationships return arrays
+- Appears in API responses like any other field
+- No DB column is created
+
 ## Critical Payload Gotchas
 
 1. **`overrideAccess: false`** — When passing `user` to Local API, ALWAYS set this. Without it, the operation runs with admin privileges regardless of the user.
