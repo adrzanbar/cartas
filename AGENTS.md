@@ -299,6 +299,52 @@ Resolves relationship data automatically via dot notation:
 - Appears in API responses like any other field
 - No DB column is created
 
+## Field Hooks
+
+Field hooks run on a per-field basis during document lifecycle events.
+
+### Config
+
+```typescript
+{
+  name: 'example',
+  type: 'text',
+  hooks: {
+    beforeValidate: [(args) => { ... }],
+    beforeChange: [(args) => { ... }],
+    afterChange: [(args) => { ... }],
+    afterRead: [(args) => { ... }],
+    beforeDuplicate: [(args) => { ... }],
+  },
+}
+```
+
+### `afterRead` (most relevant for virtual fields)
+
+Runs when a field value is read from the DB. Ideal for computing virtual field values. Receives `data` (full document), `value`, `siblingData`, `req`, `findMany` (boolean for list reads).
+
+TypeScript: `FieldHook<T, ValueType, SiblingType>` from `payload`:
+
+```typescript
+import type { FieldHook } from 'payload'
+
+const fullNameHook: FieldHook<Post, string, Post> = ({
+  value, data, siblingData, originalDoc, operation, req,
+}) => {
+  return `${siblingData.firstName} ${siblingData.lastName}`
+}
+```
+
+**Performance warning:** Multiple `afterRead` hooks on the same query cause N+1 queries on list views. Prefer collection-level `afterRead` for batch operations when possible.
+
+### `beforeDuplicate`
+
+Called on each locale when duplicating a document. By default, unique+required text fields get `- Copy` appended.
+
+```typescript
+beforeDuplicate: [({ value }) => (value ?? 0) + 1],
+```
+
 ## Jobs Queue
 
 Payload's jobs queue has four concepts: **tasks**, **workflows**, **jobs**, **queues**.
