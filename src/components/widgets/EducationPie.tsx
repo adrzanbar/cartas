@@ -1,8 +1,16 @@
 import type { WidgetServerProps } from 'payload'
+import { isAdmin } from '@/collections/Users'
 import { PieClient } from './PieClient'
 
 export default async function EducationPie({ req }: WidgetServerProps) {
-  const { payload } = req
+  const { payload, user } = req
+  if (!user || !isAdmin(user)) {
+    return (
+      <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--theme-elevation-500)' }}>
+        No autorizado
+      </div>
+    )
+  }
 
   const [primary, secondary, tertiary] = await Promise.all([
     payload.count({

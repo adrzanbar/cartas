@@ -1,7 +1,15 @@
 import type { WidgetServerProps } from 'payload'
+import { isAdmin } from '@/collections/Users'
 
 export default async function StatsRow({ req }: WidgetServerProps) {
-  const { payload } = req
+  const { payload, user } = req
+  if (!user || !isAdmin(user)) {
+    return (
+      <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--theme-elevation-500)' }}>
+        No autorizado
+      </div>
+    )
+  }
 
   const [letters, holders, sponsors, lettersApproved, pendingDeliveries] = await Promise.all([
     payload.count({ collection: 'letters', overrideAccess: true }),

@@ -52,13 +52,17 @@ export default buildConfig({
           maxWidth: 'full',
         },
       ],
-      defaultLayout: (() => [
-        { widgetSlug: 'stats-row', width: 'full' },
-        { widgetSlug: 'education-pie', width: 'medium' },
-        { widgetSlug: 'delivery-status', width: 'medium' },
-        { widgetSlug: 'letters-per-campaign', width: 'full' },
-        { widgetSlug: 'collections', width: 'full' },
-      ]) as (args: { req: any }) => any,
+      defaultLayout: (({ req }: { req: any }) => {
+        const user = req.user
+        const admin = user && isAdmin(user)
+        return [
+          ...(admin ? [{ widgetSlug: 'stats-row', width: 'full' as const }] : []),
+          ...(admin ? [{ widgetSlug: 'education-pie', width: 'medium' as const }] : []),
+          ...(admin ? [{ widgetSlug: 'delivery-status', width: 'medium' as const }] : []),
+          ...(admin ? [{ widgetSlug: 'letters-per-campaign', width: 'full' as const }] : []),
+          { widgetSlug: 'collections', width: 'full' as const },
+        ]
+      }) as (args: { req: any }) => any,
     },
     importMap: {
       baseDir: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
