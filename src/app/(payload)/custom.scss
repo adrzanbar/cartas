@@ -145,17 +145,117 @@ h4, h5, h6 {
 /* Nav */
 .nav {
   background-color: var(--theme-elevation-100);
+  border-right: 1px solid var(--theme-elevation-200);
 }
+
+/* Nav links */
 .nav__link {
   font-weight: 500;
   font-size: 14px;
+  padding-block: 4px;
+  padding-inline-start: 4px;
+  gap: 10px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  border-radius: 6px;
+  margin-inline: 4px;
 }
+.nav__link:hover {
+  color: var(--color-base-600);
+  background-color: var(--theme-elevation-150);
+  text-decoration: none !important;
+}
+
+/* Active nav link */
+.nav__link:has(.nav__link-indicator) {
+  font-weight: 600;
+  color: var(--color-base-700);
+  background-color: var(--color-base-50);
+}
+.nav__link:has(.nav__link-indicator) .nav__link-icon {
+  color: var(--color-base-500);
+}
+
+/* Nav link icon — lucide icons in sidebar */
+.nav__link-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--theme-elevation-500);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+.nav__link:hover .nav__link-icon {
+  color: var(--color-base-500);
+  transform: scale(1.1);
+}
+
+/* Active link indicator (accent bar) */
+.nav__link-indicator {
+  background: var(--color-base-500);
+  width: 3px;
+  height: 18px;
+  inset-inline-start: -7px;
+  border-radius: 3px;
+}
+
+/* Nav group label */
 .nav-group__label {
   font-weight: 600;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--theme-elevation-700);
+  color: var(--theme-elevation-600);
+  padding-inline: 8px;
+}
+
+/* Nav group toggle */
+.nav-group__toggle {
+  padding-inline: 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+.nav-group__toggle:hover {
+  background-color: var(--theme-elevation-150);
+}
+
+/* Custom scrollbar for nav */
+.nav__scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.nav__scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nav__scroll::-webkit-scrollbar-thumb {
+  background: var(--theme-elevation-300);
+  border-radius: 2px;
+}
+.nav__scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-elevation-400);
+}
+
+/* Gradient overlay at the bottom of nav scroll area */
+.nav__scroll::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  height: 40px;
+  background: linear-gradient(transparent, var(--theme-elevation-100));
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Nav controls section (logout + settings) */
+.nav__controls {
+  position: relative;
+  z-index: 1;
+  padding-top: 12px;
+  border-top: 1px solid var(--theme-elevation-200);
+  margin-top: 4px;
+}
+.nav__controls > :first-child {
+  margin-top: 0;
 }
 .field-label,
 label.field-label {
@@ -186,13 +286,9 @@ label.field-label {
   border: 1px solid var(--theme-elevation-200);
 }
 
-/* Nav Group Toggle (empty) */
-.nav-group__toggle {
-}
-
 /* Nav Group Icon */
 .nav-group__indicator svg .stroke {
-  stroke: var(--theme-elevation-700);
+  stroke: var(--theme-elevation-600);
 }
 
 /* Dashboard Card Labels */
@@ -288,11 +384,6 @@ label.field-label {
 .search-filter__input {
 }
 
-/* Accent Colors - Active Nav Item Indicator */
-.nav__link-indicator {
-  background: var(--color-accent-500);
-}
-
 /* Primary Button */
 .btn--style-primary {
   background-color: var(--color-accent-700);
@@ -319,15 +410,10 @@ label.field-label {
   border-color: var(--color-accent-500);
 }
 
-/* Accent Colors - Nav Link Hover/Active */
-.nav__link.active {
-  color: var(--color-accent-500);
-}
-.nav__link:hover,
+/* Accent Colors - Nav Link Focus Visible */
 .nav__link:focus-visible {
-  color: var(--color-accent-500);
+  color: var(--color-base-600);
+  background-color: var(--theme-elevation-150);
+  text-decoration: none !important;
 }
 
-html[data-theme='dark'] {
-  /* Dark Theme Colors */
-}
