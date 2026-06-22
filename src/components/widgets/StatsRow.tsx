@@ -27,16 +27,19 @@ export default async function StatsRow({ req }: WidgetServerProps) {
     }),
   ])
 
-  const items = [
+  const letterItems = [
     { label: 'Cartas', value: letters.totalDocs, color: 'var(--theme-elevation-900)' },
     { label: 'Aprobadas', value: lettersApproved.totalDocs, color: 'var(--theme-success-500)' },
     { label: 'Pendientes', value: letters.totalDocs - lettersApproved.totalDocs, color: 'var(--theme-warning-500)' },
-    { label: 'Becarios', value: holders.totalDocs, color: 'var(--theme-elevation-700)' },
-    { label: 'Padrinos', value: sponsors.totalDocs, color: 'var(--theme-elevation-700)' },
     { label: 'Pendientes envío', value: pendingDeliveries.totalDocs, color: 'var(--theme-error-500)' },
   ]
 
-  return (
+  const peopleItems = [
+    { label: 'Becarios', value: holders.totalDocs, color: 'var(--theme-elevation-700)' },
+    { label: 'Padrinos', value: sponsors.totalDocs, color: 'var(--theme-elevation-700)' },
+  ]
+
+  const grid = (items: typeof letterItems) => (
     <div
       style={{
         display: 'grid',
@@ -75,6 +78,13 @@ export default async function StatsRow({ req }: WidgetServerProps) {
           </p>
         </div>
       ))}
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {grid(peopleItems)}
+      {grid(letterItems)}
     </div>
   )
 }
