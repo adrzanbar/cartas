@@ -6,6 +6,7 @@ import {
   type FilterOptions,
   type Where,
   type CollectionBeforeChangeHook,
+  type CollectionBeforeDeleteHook,
   APIError,
   CollectionAfterChangeHook,
 } from 'payload'
@@ -177,6 +178,25 @@ const syncDeliveries: CollectionAfterChangeHook<Letter> = async ({
   return doc
 }
 
+const deleteRelatedDeliveries: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const { docs: deliveries } = await req.payload.find({
+    collection: 'deliveries',
+    where: { letter: { equals: id } },
+    depth: 0,
+    pagination: false,
+    req,
+    overrideAccess: true,
+  })
+  for (const delivery of deliveries) {
+    await req.payload.delete({
+      collection: 'deliveries',
+      id: delivery.id,
+      req,
+      overrideAccess: true,
+    })
+  }
+}
+
 export const Letters: CollectionConfig = {
   slug: 'letters',
   fields: [
@@ -298,6 +318,7 @@ export const Letters: CollectionConfig = {
   hooks: {
     beforeChange: [ensureUniqueCampaignAuthorRecipient],
     afterChange: [syncDeliveries],
+    beforeDelete: [deleteRelatedDeliveries],
   },
   labels: {
     singular: { es: 'Carta' },
