@@ -75,6 +75,9 @@ export const Users: CollectionConfig = {
       es: 'Administración',
     },
     useAsTitle: 'name',
+    components: {
+      listMenuItems: ['@/components/ImportCSV#ImportMediadores'],
+    },
   },
   auth: {
     forgotPassword: {

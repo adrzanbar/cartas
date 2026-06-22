@@ -1,4 +1,4 @@
-import type { CollectionConfig, Where } from 'payload'
+import type { CollectionConfig } from 'payload'
 import { isAdmin } from './Users'
 
 export const Sponsors: CollectionConfig = {
@@ -8,19 +8,26 @@ export const Sponsors: CollectionConfig = {
       name: 'name',
       type: 'text',
       label: { es: 'Nombre' },
-      required: true,
     },
     {
       name: 'organizationName',
       type: 'text',
       label: { es: 'Nombre de la organización' },
-      required: false,
+    },
+    {
+      name: 'nationalId',
+      type: 'text',
+      label: { es: 'DNI' },
+    },
+    {
+      name: 'laborTaxUniqueKey',
+      type: 'text',
+      label: { es: 'CUIL/CUIT' },
     },
     {
       name: 'email',
       type: 'email',
       label: { es: 'Correo electrónico' },
-      unique: true,
     },
   ],
   access: {
@@ -35,6 +42,9 @@ export const Sponsors: CollectionConfig = {
       es: 'Personas',
     },
     hideAPIURL: true,
+    components: {
+      listMenuItems: ['@/components/ImportCSV#ImportPadrinos'],
+    },
   },
   labels: {
     singular: { es: 'Padrino' },

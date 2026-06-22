@@ -17,6 +17,7 @@ import { migrations } from './migrations'
 import { httpOAuthAdapter } from './adapters/email-http-oauth'
 import { SendPendingDeliveries } from './tasks/send-pending-deliveries'
 import { Deliveries } from './collections/Deliveries'
+import { es as customTranslations } from './translations/es'
 
 export default buildConfig({
   admin: {
@@ -69,6 +70,7 @@ export default buildConfig({
   i18n: {
     supportedLanguages: { es },
     fallbackLanguage: 'es',
+    translations: { es: customTranslations } as any,
   },
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL,
   jobs: {

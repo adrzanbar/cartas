@@ -34,17 +34,26 @@ const createUser: CollectionBeforeChangeHook<ScholarshipHolder> = async ({
   if (data.user) return data
   if (data.educationLevel !== 'tertiary') return data
   if (!data.nationalId || !data.name) return data
-  const user = await req.payload.create({
+  const username = normalize(data.nationalId)
+  const existing = await req.payload.find({
     collection: 'users',
-    req,
-    data: {
-      name: data.name,
-      username: normalize(data.nationalId),
-      roles: ['scholarshipHolder'],
-      password: normalize(data.nationalId + data.name),
-    },
+    where: { username: { equals: username } },
+    limit: 1, pagination: false,
   })
-  data.user = user.id
+  if (existing.docs.length > 0) {
+    data.user = existing.docs[0].id
+  } else {
+    const user = await req.payload.create({
+      collection: 'users',
+      data: {
+        name: data.name,
+        username,
+        roles: ['scholarshipHolder'],
+        password: normalize(data.nationalId + data.name),
+      },
+    })
+    data.user = user.id
+  }
   return data
 }
 
@@ -158,6 +167,9 @@ export const ScholarshipHolders: CollectionConfig = {
       es: 'Personas',
     },
     hideAPIURL: true,
+    components: {
+      listMenuItems: ['@/components/ImportCSV#ImportBecarios'],
+    },
   },
   hooks: {
     beforeChange: [createUser],
