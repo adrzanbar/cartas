@@ -1,5 +1,5 @@
-import Image from 'next/image'
+import { Mail } from 'lucide-react'
 
 export default function Icon() {
-  return <Image src="/icon.png" alt="FONBEC Cartas" width={32} height={32} />
+  return <Mail />
 }
