@@ -282,14 +282,7 @@ export const Letters: CollectionConfig = {
           required: true,
           defaultValue: false,
         },
-        {
-          name: 'sent',
-          type: 'checkbox',
-          defaultValue: false,
-          admin: { readOnly: true, width: '50%' },
-          label: { es: 'Enviada' },
-          access: { create: () => false, update: () => false },
-        },
+
       ],
     },
     {

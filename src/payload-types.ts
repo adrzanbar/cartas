@@ -279,7 +279,6 @@ export interface Letter {
       }[]
     | null;
   approved?: boolean | null;
-  sent?: boolean | null;
   mediator?: (number | null) | User;
   updatedAt: string;
   createdAt: string;
@@ -635,7 +634,6 @@ export interface LettersSelect<T extends boolean = true> {
         id?: T;
       };
   approved?: T;
-  sent?: T;
   mediator?: T;
   updatedAt?: T;
   createdAt?: T;
