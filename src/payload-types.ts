@@ -111,6 +111,10 @@ export interface Config {
   };
   locale: null;
   widgets: {
+    'stats-row': StatsRowWidget;
+    'education-pie': EducationPieWidget;
+    'delivery-status': DeliveryStatusWidget;
+    'letters-per-campaign': LettersPerCampaignWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -768,6 +772,46 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "stats-row_widget".
+ */
+export interface StatsRowWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "education-pie_widget".
+ */
+export interface EducationPieWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "delivery-status_widget".
+ */
+export interface DeliveryStatusWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'small' | 'medium';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letters-per-campaign_widget".
+ */
+export interface LettersPerCampaignWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

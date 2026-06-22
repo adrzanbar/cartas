@@ -25,6 +25,41 @@ export default buildConfig({
       graphics: { Icon: '@/components/icon', Logo: '@/components/logo' },
     },
     dateFormat: "d 'de' MMMM yyyy",
+    dashboard: {
+      widgets: [
+        {
+          slug: 'stats-row',
+          Component: '/components/widgets/StatsRow',
+          minWidth: 'full',
+          maxWidth: 'full',
+        },
+        {
+          slug: 'education-pie',
+          Component: '/components/widgets/EducationPie',
+          minWidth: 'small',
+          maxWidth: 'medium',
+        },
+        {
+          slug: 'delivery-status',
+          Component: '/components/widgets/DeliveryStatus',
+          minWidth: 'small',
+          maxWidth: 'medium',
+        },
+        {
+          slug: 'letters-per-campaign',
+          Component: '/components/widgets/LettersPerCampaign',
+          minWidth: 'medium',
+          maxWidth: 'full',
+        },
+      ],
+      defaultLayout: (() => [
+        { widgetSlug: 'stats-row', width: 'full' },
+        { widgetSlug: 'education-pie', width: 'medium' },
+        { widgetSlug: 'delivery-status', width: 'medium' },
+        { widgetSlug: 'letters-per-campaign', width: 'full' },
+        { widgetSlug: 'collections', width: 'full' },
+      ]) as (args: { req: any }) => any,
+    },
     importMap: {
       baseDir: path.resolve(path.dirname(fileURLToPath(import.meta.url))),
     },
