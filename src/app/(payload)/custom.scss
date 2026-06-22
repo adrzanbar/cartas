@@ -172,11 +172,6 @@
 .template-default__wrap {
 }
 
-/* Primary Button */
-.btn--style-primary {
-  background-color: var(--theme-elevation-900);
-}
-
 /* Pill (empty) */
 .pill {
 }
@@ -252,12 +247,14 @@
   background: var(--color-accent-500);
 }
 
-/* Accent Colors - Primary Buttons */
+/* Primary Button */
 .btn--style-primary {
-  background-color: var(--color-accent-500);
+  background-color: var(--color-accent-700);
+  --color: var(--color-base-0);
 }
 .btn--style-primary:hover {
-  background-color: var(--color-accent-600);
+  background-color: var(--color-accent-800);
+  --color: var(--color-base-0);
 }
 
 /* Accent Colors - Text Selection */
