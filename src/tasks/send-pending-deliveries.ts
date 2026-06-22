@@ -69,7 +69,7 @@ async function processDelivery(
     campaign,
     template,
     (letterDoc.author as ScholarshipHolder).name,
-    (recipient as Sponsor).name,
+    (recipient as Sponsor).name ?? '',
     letterImageCids,
   )
 

@@ -773,10 +773,22 @@
           "name": "name",
           "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "organization_name": {
           "name": "organization_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "national_id": {
+          "name": "national_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "labor_tax_unique_key": {
+          "name": "labor_tax_unique_key",
           "type": "varchar",
           "primaryKey": false,
           "notNull": false
@@ -803,21 +815,6 @@
         }
       },
       "indexes": {
-        "sponsors_email_idx": {
-          "name": "sponsors_email_idx",
-          "columns": [
-            {
-              "expression": "email",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "sponsors_updated_at_idx": {
           "name": "sponsors_updated_at_idx",
           "columns": [
@@ -1305,6 +1302,13 @@
         },
         "approved": {
           "name": "approved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "sent": {
+          "name": "sent",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
@@ -2134,6 +2138,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": false
+        },
+        "meta": {
+          "name": "meta",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "updated_at": {
           "name": "updated_at",
@@ -3079,6 +3089,43 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "public.payload_jobs_stats": {
+      "name": "payload_jobs_stats",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "stats": {
+          "name": "stats",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -3107,7 +3154,7 @@
       "schema": "public",
       "values": [
         "inline",
-        "send-letter"
+        "send-pending-deliveries"
       ]
     },
     "public.enum_payload_jobs_log_state": {
@@ -3123,7 +3170,7 @@
       "schema": "public",
       "values": [
         "inline",
-        "send-letter"
+        "send-pending-deliveries"
       ]
     }
   },
@@ -3137,6 +3184,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "a97aac5e-6b95-4290-b243-5656220cb6c7",
+  "id": "57a0f635-7e2e-4847-8aa2-a1968dab01da",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

@@ -130,28 +130,7 @@ const ensureUniqueCampaignAuthorRecipient: CollectionBeforeChangeHook<Letter> = 
   return data
 }
 
-const computeSent: FieldHook<Letter, boolean, Letter> = async ({ data: letter, req }) => {
-  if (!letter?.id) return false
-  const recipients = (letter.recipients || []).map(getId)
-  if (recipients.length === 0) return false
-  const { totalDocs } = await req.payload.find({
-    req,
-    overrideAccess: true,
-    collection: 'deliveries',
-    where: {
-      and: [
-        { letter: { equals: letter.id } },
-        { sentAt: { exists: true } },
-        { recipient: { in: recipients } },
-      ],
-    },
-    depth: 0,
-    pagination: false,
-  })
-  return totalDocs >= recipients.length
-}
-
-const enqueueTask: CollectionAfterChangeHook<Letter> = async ({
+const syncDeliveries: CollectionAfterChangeHook<Letter> = async ({
   doc,
   previousDoc,
   req,
@@ -286,12 +265,10 @@ export const Letters: CollectionConfig = {
         {
           name: 'sent',
           type: 'checkbox',
-          virtual: true,
-          hooks: {
-            afterRead: [computeSent],
-          },
+          defaultValue: false,
           admin: { readOnly: true, width: '50%' },
           label: { es: 'Enviada' },
+          access: { create: () => false, update: () => false },
         },
       ],
     },
@@ -320,7 +297,7 @@ export const Letters: CollectionConfig = {
   },
   hooks: {
     beforeChange: [ensureUniqueCampaignAuthorRecipient],
-    afterChange: [enqueueTask],
+    afterChange: [syncDeliveries],
   },
   labels: {
     singular: { es: 'Carta' },
