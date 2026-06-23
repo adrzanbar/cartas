@@ -1,16 +1,15 @@
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-import { FlatCompat } from '@eslint/eslintrc'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-})
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import nextPlugin from '@next/eslint-plugin-next'
 
 const eslintConfig = [
-  ...compat.extends('next/core-web-vitals', 'next/typescript'),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    name: 'next/core-web-vitals',
+    plugins: { '@next/next': nextPlugin },
+    rules: nextPlugin.configs['core-web-vitals'].rules,
+  },
   {
     rules: {
       '@typescript-eslint/ban-ts-comment': 'warn',
