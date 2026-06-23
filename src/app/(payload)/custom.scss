@@ -160,8 +160,8 @@ h4, h5, h6 {
   margin-inline: 4px;
 }
 .nav__link:hover {
-  color: var(--color-base-600);
-  background-color: var(--theme-elevation-150);
+  color: var(--color-accent-700);
+  background-color: var(--color-accent-100);
   text-decoration: none !important;
 }
 
@@ -184,7 +184,7 @@ h4, h5, h6 {
   transition: color 0.15s ease, transform 0.15s ease;
 }
 .nav__link:hover .nav__link-icon {
-  color: var(--color-base-500);
+  color: var(--color-accent-600);
   transform: scale(1.1);
 }
 
@@ -214,7 +214,7 @@ h4, h5, h6 {
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 .nav-group__toggle:hover {
-  background-color: var(--theme-elevation-150);
+  background-color: var(--color-accent-100);
 }
 
 /* Custom scrollbar for nav */
@@ -412,8 +412,8 @@ label.field-label {
 
 /* Accent Colors - Nav Link Focus Visible */
 .nav__link:focus-visible {
-  color: var(--color-base-600);
-  background-color: var(--theme-elevation-150);
+  color: var(--color-accent-700);
+  background-color: var(--color-accent-100);
   text-decoration: none !important;
 }
 
@@ -429,5 +429,21 @@ label.field-label {
 }
 html[data-theme='dark'] .step-nav__home svg {
   color: white;
+}
+
+/* Dark theme — lime accent hover states */
+html[data-theme='dark'] .nav__link:hover {
+  color: var(--color-accent-300);
+  background-color: var(--color-accent-950);
+}
+html[data-theme='dark'] .nav__link:hover .nav__link-icon {
+  color: var(--color-accent-400);
+}
+html[data-theme='dark'] .nav-group__toggle:hover {
+  background-color: var(--color-accent-950);
+}
+html[data-theme='dark'] .nav__link:focus-visible {
+  color: var(--color-accent-300);
+  background-color: var(--color-accent-950);
 }
 
