@@ -29,8 +29,20 @@ export default buildConfig({
     dashboard: {
       widgets: [
         {
+          slug: 'campaign-filter',
+          Component: '/components/widgets/CampaignFilter',
+          minWidth: 'full',
+          maxWidth: 'full',
+        },
+        {
           slug: 'stats-row',
           Component: '/components/widgets/StatsRow',
+          minWidth: 'full',
+          maxWidth: 'full',
+        },
+        {
+          slug: 'people-stats',
+          Component: '/components/widgets/PeopleStats',
           minWidth: 'full',
           maxWidth: 'full',
         },
@@ -57,6 +69,8 @@ export default buildConfig({
         const user = req.user
         const admin = user && isAdmin(user)
         return [
+          ...(admin ? [{ widgetSlug: 'campaign-filter', width: 'full' as const }] : []),
+          ...(admin ? [{ widgetSlug: 'people-stats', width: 'full' as const }] : []),
           ...(admin ? [{ widgetSlug: 'stats-row', width: 'full' as const }] : []),
           ...(admin ? [{ widgetSlug: 'education-pie', width: 'medium' as const }] : []),
           ...(admin ? [{ widgetSlug: 'delivery-status', width: 'medium' as const }] : []),

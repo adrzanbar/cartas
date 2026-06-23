@@ -4,7 +4,9 @@ import { ImportPadrinos as ImportPadrinos_d78d11b1fe4856fff10fe52ef34c5461 } fro
 import { default as default_17ea6b3b7a598429b2fedaf012508946 } from '@/components/CustomNav'
 import { default as default_f8022cf35b3d492829ec1a405bd134e9 } from '@/components/icon'
 import { default as default_7a89b5675912f3f4f82dd41bbb03d52e } from '@/components/logo'
+import { default as default_e44caf3bfbdfb54bed2242c1f42b4a59 } from '../../../components/widgets/CampaignFilter'
 import { default as default_95bb2cb41c87de057a5546d91d0f1f02 } from '../../../components/widgets/StatsRow'
+import { default as default_abe56d4875efbbf6b423f1156fa41093 } from '../../../components/widgets/PeopleStats'
 import { default as default_f59670b774e4836f79b6ba344829063e } from '../../../components/widgets/EducationPie'
 import { default as default_268123dc013a4c7d2cb36f384dbe884c } from '../../../components/widgets/DeliveryStatus'
 import { default as default_486f9517953ffc1d6b1f28db1bc7598b } from '../../../components/widgets/LettersPerCampaign'
@@ -17,7 +19,9 @@ export const importMap = {
   "@/components/CustomNav#default": default_17ea6b3b7a598429b2fedaf012508946,
   "@/components/icon#default": default_f8022cf35b3d492829ec1a405bd134e9,
   "@/components/logo#default": default_7a89b5675912f3f4f82dd41bbb03d52e,
+  "/components/widgets/CampaignFilter#default": default_e44caf3bfbdfb54bed2242c1f42b4a59,
   "/components/widgets/StatsRow#default": default_95bb2cb41c87de057a5546d91d0f1f02,
+  "/components/widgets/PeopleStats#default": default_abe56d4875efbbf6b423f1156fa41093,
   "/components/widgets/EducationPie#default": default_f59670b774e4836f79b6ba344829063e,
   "/components/widgets/DeliveryStatus#default": default_268123dc013a4c7d2cb36f384dbe884c,
   "/components/widgets/LettersPerCampaign#default": default_486f9517953ffc1d6b1f28db1bc7598b,

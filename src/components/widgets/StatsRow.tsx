@@ -2,7 +2,7 @@ import type { WidgetServerProps } from 'payload'
 import { isAdmin } from '@/collections/Users'
 
 export default async function StatsRow({ req }: WidgetServerProps) {
-  const { payload, user } = req
+  const { payload, user, query } = req
   if (!user || !isAdmin(user)) {
     return (
       <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--theme-elevation-500)' }}>
@@ -11,35 +11,33 @@ export default async function StatsRow({ req }: WidgetServerProps) {
     )
   }
 
-  const [letters, holders, sponsors, lettersApproved, pendingDeliveries] = await Promise.all([
-    payload.count({ collection: 'letters', overrideAccess: true }),
-    payload.count({ collection: 'scholarship-holders', overrideAccess: true }),
-    payload.count({ collection: 'sponsors', overrideAccess: true }),
+  const campaignId = typeof query?.campaign === 'string' ? query.campaign : undefined
+  const whereCampaign = campaignId ? { campaign: { equals: campaignId } } : undefined
+
+  const [letters, lettersApproved, pendingDeliveries] = await Promise.all([
+    payload.count({ collection: 'letters', where: whereCampaign, overrideAccess: true }),
     payload.count({
       collection: 'letters',
-      where: { approved: { equals: true } },
+      where: { approved: { equals: true }, ...whereCampaign },
       overrideAccess: true,
     }),
     payload.count({
       collection: 'deliveries',
-      where: { sentAt: { exists: false } },
+      where: campaignId
+        ? { sentAt: { exists: false }, 'letter.campaign': { equals: campaignId } }
+        : { sentAt: { exists: false } },
       overrideAccess: true,
     }),
   ])
 
-  const letterItems = [
+  const items: { label: string; value: number; color: string }[] = [
     { label: 'Cartas', value: letters.totalDocs, color: 'var(--theme-elevation-900)' },
     { label: 'Aprobadas', value: lettersApproved.totalDocs, color: 'var(--theme-success-500)' },
-    { label: 'Pendientes', value: letters.totalDocs - lettersApproved.totalDocs, color: 'var(--theme-warning-500)' },
+    { label: 'Pendientes de aprobación', value: letters.totalDocs - lettersApproved.totalDocs, color: 'var(--theme-warning-500)' },
     { label: 'Pendientes envío', value: pendingDeliveries.totalDocs, color: 'var(--theme-error-500)' },
   ]
 
-  const peopleItems = [
-    { label: 'Becarios', value: holders.totalDocs, color: 'var(--theme-elevation-700)' },
-    { label: 'Padrinos', value: sponsors.totalDocs, color: 'var(--theme-elevation-700)' },
-  ]
-
-  const grid = (items: typeof letterItems) => (
+  const grid = (gridItems: { label: string; value: number; color: string }[]) => (
     <div
       style={{
         display: 'grid',
@@ -47,7 +45,7 @@ export default async function StatsRow({ req }: WidgetServerProps) {
         gap: '12px',
       }}
     >
-      {items.map((item) => (
+      {gridItems.map((item) => (
         <div
           key={item.label}
           className="card"
@@ -81,10 +79,5 @@ export default async function StatsRow({ req }: WidgetServerProps) {
     </div>
   )
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {grid(peopleItems)}
-      {grid(letterItems)}
-    </div>
-  )
+  return grid(items)
 }

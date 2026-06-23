@@ -111,7 +111,9 @@ export interface Config {
   };
   locale: null;
   widgets: {
+    'campaign-filter': CampaignFilterWidget;
     'stats-row': StatsRowWidget;
+    'people-stats': PeopleStatsWidget;
     'education-pie': EducationPieWidget;
     'delivery-status': DeliveryStatusWidget;
     'letters-per-campaign': LettersPerCampaignWidget;
@@ -775,9 +777,29 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaign-filter_widget".
+ */
+export interface CampaignFilterWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "stats-row_widget".
  */
 export interface StatsRowWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "people-stats_widget".
+ */
+export interface PeopleStatsWidget {
   data?: {
     [k: string]: unknown;
   };
