@@ -1,5 +1,5 @@
 import { User } from '@/payload-types'
-import type { ClientUser, CollectionConfig } from 'payload'
+import type { ClientUser, CollectionConfig, FieldAccess, Where } from 'payload'
 
 export const isAdmin = (user: User | ClientUser) => user?.roles?.includes('admin') ?? false
 
@@ -12,6 +12,13 @@ export const isMediator = (user: User) => user?.roles?.includes('mediator') ?? f
 
 export const isScholarshipHolder = (user: User) =>
   user?.roles?.includes('scholarshipHolder') ?? false
+
+const ownOrAdminRead: FieldAccess = ({ req, id }) => {
+  const { user } = req
+  if (!user) return false
+  if (isAdmin(user)) return true
+  return id === user.id
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -27,9 +34,17 @@ export const Users: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
+      name: 'email',
+      type: 'email',
+      access: {
+        read: ownOrAdminRead,
+      },
+    },
+    {
       name: 'username',
       type: 'text',
       access: {
+        read: ownOrAdminRead,
         update: ({ req: { user } }) => (user ? isAdmin(user) : false),
       },
       required: true,
@@ -39,6 +54,7 @@ export const Users: CollectionConfig = {
       name: 'roles',
       type: 'select',
       access: {
+        read: ownOrAdminRead,
         update: ({ req: { user } }) => (user ? isAdmin(user) : false),
       },
       hasMany: true,
@@ -59,7 +75,9 @@ export const Users: CollectionConfig = {
     read: ({ req: { user } }) => {
       if (!user) return false
       if (isAdmin(user)) return true
-      return { id: { equals: user.id } }
+      const or: Where[] = [{ id: { equals: user.id } }]
+      if (isReviewer(user)) or.push({ roles: { contains: 'mediator' } })
+      return { or }
     },
     update: ({ req: { user } }) => {
       if (!user) return false
