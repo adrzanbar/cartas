@@ -229,11 +229,11 @@ export interface ScholarshipHolder {
  */
 export interface Sponsor {
   id: number;
-  name?: string | null;
+  name: string;
   organizationName?: string | null;
   nationalId?: string | null;
   laborTaxUniqueKey?: string | null;
-  email?: string | null;
+  email: string;
   updatedAt: string;
   createdAt: string;
 }

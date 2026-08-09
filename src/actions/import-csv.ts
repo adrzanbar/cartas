@@ -67,9 +67,8 @@ export async function importMediadores(formData: FormData): Promise<ImportResult
 
     log(payload.logger, 'mediadores', `Import start: ${rows.length} rows`)
     for (let i = 0; i < rows.length; i++) {
-      const name = rows[i][nameIdx]?.trim()
-      const dni = rows[i][dniIdx]?.trim()
-      if (!name || !dni) { result.skipped++; continue }
+      const name = rows[i][nameIdx]?.trim() || ''
+      const dni = rows[i][dniIdx]?.trim() || ''
 
       const username = normalize(dni)
       try {
@@ -138,58 +137,49 @@ export async function importPadrinos(formData: FormData): Promise<ImportResult> 
 
     log(payload.logger, 'padrinos', `Import start: ${rows.length} rows`)
     for (let i = 0; i < rows.length; i++) {
-      const name = rows[i][nameIdx]?.trim()
-      if (!name) { result.skipped++; continue }
-
+      const name = rows[i][nameIdx]?.trim() || ''
       const emailCartasVal = emailCartasIdx !== -1 ? rows[i][emailCartasIdx]?.trim() || '' : ''
       const email = emailCartasVal || (emailIdx !== -1 ? rows[i][emailIdx]?.trim() || '' : '')
-
       const organizationName = empresaIdx !== -1 ? rows[i][empresaIdx]?.trim() || '' : ''
       const nationalId = dniIdx !== -1 ? rows[i][dniIdx]?.trim() || '' : ''
       const laborTaxUniqueKey = cuitIdx !== -1 ? rows[i][cuitIdx]?.trim() || '' : ''
 
       try {
-        const baseData: Partial<RequiredDataFromCollectionSlug<'sponsors'>> = { name }
-        if (organizationName) baseData.organizationName = organizationName
-        if (nationalId) baseData.nationalId = nationalId
-        if (laborTaxUniqueKey) baseData.laborTaxUniqueKey = laborTaxUniqueKey
+        const data: RequiredDataFromCollectionSlug<'sponsors'> = {
+          name,
+          email,
+          ...(organizationName ? { organizationName } : {}),
+          ...(nationalId ? { nationalId } : {}),
+          ...(laborTaxUniqueKey ? { laborTaxUniqueKey } : {}),
+        }
 
-        if (email) {
-          const orClause: Where[] = [
-            { name: { equals: name } },
-            ...(nationalId ? [{ nationalId: { equals: nationalId } }] : []),
-            ...(laborTaxUniqueKey ? [{ laborTaxUniqueKey: { equals: laborTaxUniqueKey } }] : []),
-          ]
+        const orClause: Where[] = [
+          { name: { equals: name } },
+          ...(nationalId ? [{ nationalId: { equals: nationalId } }] : []),
+          ...(laborTaxUniqueKey ? [{ laborTaxUniqueKey: { equals: laborTaxUniqueKey } }] : []),
+        ]
 
-          const existing = await payload.find({
+        const existing = await payload.find({
+          collection: 'sponsors',
+          where: { email: { equals: email }, OR: orClause },
+          req, overrideAccess: false, limit: 1, pagination: false,
+        })
+        if (existing.docs.length > 0) {
+          await payload.update({
             collection: 'sponsors',
-            where: { email: { equals: email }, OR: orClause },
-            req, overrideAccess: false, limit: 1, pagination: false,
+            id: existing.docs[0].id,
+            data,
+            req, overrideAccess: false,
           })
-          if (existing.docs.length > 0) {
-            await payload.update({
-              collection: 'sponsors',
-              id: existing.docs[0].id,
-              data: baseData,
-              req, overrideAccess: false,
-            })
-            result.updated++
-            log(payload.logger, 'padrinos', `Row ${i + 1}: "${name}" (email=${email}) → updated sponsor ${existing.docs[0].id}`)
-          } else {
-            await payload.create({
-              collection: 'sponsors', data: { ...baseData, email },
-              req, overrideAccess: false,
-            })
-            result.created++
-            log(payload.logger, 'padrinos', `Row ${i + 1}: "${name}" (email=${email}) → created sponsor`)
-          }
+          result.updated++
+          log(payload.logger, 'padrinos', `Row ${i + 1}: "${name}" (email=${email}) → updated sponsor ${existing.docs[0].id}`)
         } else {
           await payload.create({
-            collection: 'sponsors', data: baseData,
+            collection: 'sponsors', data,
             req, overrideAccess: false,
           })
           result.created++
-          log(payload.logger, 'padrinos', `Row ${i + 1}: "${name}" (no email) → created sponsor`)
+          log(payload.logger, 'padrinos', `Row ${i + 1}: "${name}" (email=${email}) → created sponsor`)
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
@@ -241,13 +231,9 @@ export async function importBecarios(formData: FormData): Promise<ImportResult> 
 
     log(payload.logger, 'becarios', `Import start: ${rows.length} rows`)
     for (let i = 0; i < rows.length; i++) {
-      const name = rows[i][nameIdx]?.trim()
-      const dni = rows[i][dniIdx]?.trim()
-      const nivel = rows[i][nivelIdx]?.trim()
-      if (!name || !dni || !nivel) {
-        result.skipped++
-        continue
-      }
+      const name = rows[i][nameIdx]?.trim() || ''
+      const dni = rows[i][dniIdx]?.trim() || ''
+      const nivel = rows[i][nivelIdx]?.trim() || ''
 
       const educationLevel = levelMap[nivel]
       if (!educationLevel) {

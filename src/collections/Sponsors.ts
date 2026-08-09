@@ -8,6 +8,7 @@ export const Sponsors: CollectionConfig = {
       name: 'name',
       type: 'text',
       label: { es: 'Nombre' },
+      required: true,
     },
     {
       name: 'organizationName',
@@ -28,6 +29,7 @@ export const Sponsors: CollectionConfig = {
       name: 'email',
       type: 'email',
       label: { es: 'Correo electrónico' },
+      required: true,
     },
   ],
   access: {
