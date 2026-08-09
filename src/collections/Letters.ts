@@ -53,9 +53,11 @@ const updateAccess: Access<LetterImage> = async ({ req }) => {
   }
 }
 
-const campaignFilter: FilterOptions<Letter> = () => ({
-  sendAt: { greater_than: new Date().toISOString() },
-})
+const campaignFilter: FilterOptions<Letter> = ({ req }) => {
+  const { user } = req
+  if (user && (isAdmin(user) || isReviewer(user) || isTertiaryReviewer(user))) return true
+  return { sendAt: { greater_than: new Date().toISOString() } }
+}
 
 const setLetterImageAuthor: FieldHook<Letter, number | LetterImage | null | undefined> = async ({
   req,
